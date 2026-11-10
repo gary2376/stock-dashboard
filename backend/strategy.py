@@ -26,7 +26,8 @@ MAX_FILE, MAX_TOTAL, MAX_FILES = 100 * 1024, 300 * 1024, 20
 CHUNK_MAX, OVERLAP = 1200, 150
 ALL_CHUNKS_LIMIT = 8000
 CONTEXT_CAP = 600
-STATUSES = ("pass", "fail", "unknown")
+STATUSES = ("pass", "fail", "unknown", "conditional")
+ADVICE_MAX = 120
 
 _CJK = "一-鿿"
 _HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
@@ -256,8 +257,32 @@ def _find_all(hay: str, needle: str):
     return hits
 
 
+_ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b.?")
+_FAKE_FACT = re.compile(r"\b(HOLD|TECH|DAILY|WEEKLY|PRICE|FUND|MARKET)\.[A-Za-z0-9_]+\s*=")
+
+
+def _clean_text(v, keep_nl: bool = False) -> str:
+    """Printable plain text: ANSI sequences removed, control/format chars (C0, C1, ...) and whitespace become
+    single spaces (newlines kept when keep_nl). Non-str -> ''."""
+    if not isinstance(v, str):
+        return ""
+    v = _ANSI.sub("", v)
+    v = "".join("\n" if keep_nl and ch == "\n" else " " if unicodedata.category(ch)[0] in "CZ" else ch for ch in v)
+    if keep_nl:
+        return "\n".join(" ".join(line.split()) for line in v.split("\n")).strip()
+    return " ".join(v.split())
+
+
+def _advice(v):
+    """Plain-text advice (never parsed), capped."""
+    return _clean_text(v)[:ADVICE_MAX]
+
+
 def verify_rows(rows, selected, notes, registry):
-    """Returns (verified_rows, warnings); never raises on malformed rows. The quote must be unique across
+    """Returns (verified_rows, warnings); never raises on malformed rows.
+    Known limitation: whether a rule is position-dependent is the model's judgement. Code only enforces that
+    HOLD.* refs with HOLD.held False cannot be pass/fail, that 'conditional' needs a valid fact_ref plus both
+    advice strings, and that advice is plain unverified text. The quote must be unique across
     ALL provided notes. 'offset' is the exact original-text offset of the quote (via the span map)."""
     by_id = {c.id: c for c in selected}
     kept, warns = [], []
@@ -302,16 +327,33 @@ def verify_rows(rows, selected, notes, registry):
         good = [k for k in dict.fromkeys(strs) if k in registry]
         if len(good) != len(refs):
             warns.append(f"{tag}: removed invalid fact_refs {[k for k in refs if not (isinstance(k, str) and k in registry)]}")
-        if status in ("pass", "fail") and registry.get("HOLD.held") == "False" \
-                and any(k.startswith("HOLD.") for k in good):
-            warns.append(f"{tag}: status {status} downgraded to unknown, position rule but HOLD.held is False")
+        advice = {}
+        for k in ("if_held", "if_not_held"):
+            advice[k] = _advice(row.get(k))
+            if _FAKE_FACT.search(unicodedata.normalize("NFKC", advice[k])):  # full-width ＨＯＬＤ.held＝True included
+                warns.append(f"{tag}: {k} dropped, looks like a registry key=value line")
+                advice[k] = ""
+        held = registry.get("HOLD.held")
+        if held == "True":
+            advice["if_not_held"] = ""  # holder: only if_held makes sense
+        if status in ("pass", "fail") and held == "False" and any(k.startswith("HOLD.") for k in good):
+            status = "conditional" if good and all(advice.values()) else "unknown"
+            warns.append(f"{tag}: position rule but HOLD.held is False, status set to {status}")
+        elif status == "conditional" and held not in (None, "False"):
+            warns.append(f"{tag}: conditional not allowed when HOLD.held is {held}, downgraded to unknown")
+            status = "unknown"
+        elif status == "conditional" and not good:
+            warns.append(f"{tag}: conditional needs at least one valid fact_ref, downgraded to unknown")
+            status = "unknown"
+        elif status == "conditional" and not all(advice.values()):
+            warns.append(f"{tag}: conditional needs both if_held and if_not_held, downgraded to unknown")
             status = "unknown"
         if status in ("pass", "fail") and not good:
             warns.append(f"{tag}: status {status} downgraded to unknown, no valid fact_refs")
             status = "unknown"
         kept.append({
-            "rule": rule[:60], "source": src, "quote": quote, "status": status,
-            "fact_refs": good, "evidence": "; ".join(f"{k}={registry[k]}" for k in good),
+            "rule": _clean_text(rule)[:60], "source": src, "quote": quote, "status": status,
+            "fact_refs": good, **advice, "advice_verified": False, "evidence": "; ".join(f"{k}={registry[k]}" for k in good),
             "file": note.name, "offset": off,
             "context": _context(note.text, off, end),
             "verified": {"quote": True, "fact_refs": bool(good)},
@@ -459,12 +501,18 @@ def build_prompt(ticker: str, selected: list[Chunk], registry: dict[str, str]) -
         '- "source": the chunk id, e.g. "S1"\n'
         '- "quote": text copied verbatim from that chunk, at most 80 characters; a full sentence or '
         "clause, never a fragment, a heading or a number\n"
-        '- "status": "pass", "fail" or "unknown" (your judgment of the rule against the facts; use '
-        '"unknown" only when no registry key applies)\n'
+        '- "status": "pass", "fail", "unknown" or "conditional" (your judgment of the rule against the facts; '
+        'use "unknown" only when no registry key applies; "conditional" is allowed ONLY when HOLD.held is '
+        "False or no HOLD.* key exists, and means the verdict depends on whether/how the user holds it)\n"
         '- "fact_refs": list of registry keys you relied on, e.g. ["TECH.rsi14"]\n'
+        '- optional "if_held" and "if_not_held": each at most 120 characters, Traditional Chinese, concrete '
+        "(what to do or watch under THIS rule and the current facts, e.g. a stop level, don't add, wait for X). "
+        'A "conditional" row MUST have both, and MUST cite at least one valid fact_ref (cite HOLD.held for position-dependent rules). They are your suggestion, not a verified fact: refer to registry '
+        "facts only and avoid certainty language.\n"
         "HOLD.* keys describe the position in this ticker. Use them for rules about averaging "
-        "down, chasing, position behaviour and entry location. If HOLD.held is False such rules are not "
-        'applicable: set status "unknown" (never pass/fail). Never infer holding behaviour from price '
+        "down, chasing, position behaviour and entry location. If HOLD.held is True, judge pass/fail from "
+        'HOLD.* and you may add a single "if_held" advice. If HOLD.held is False, such rules get status '
+        '"conditional" with both advice fields (never pass/fail). Never infer holding behaviour from price '
         "action alone, only from HOLD.* keys.\n"
         "Do not write evidence text; it is generated from the registry.\n"
     )

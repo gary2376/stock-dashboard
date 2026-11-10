@@ -122,3 +122,84 @@ def test_verify_downgrades_hold_rule_when_not_held():
     assert rows[0]["status"] == "unknown" and any("HOLD.held is False" in w for w in warns)
     rows, _ = strategy.verify_rows([{**r, "fact_refs": ["TECH.rsi14"]}], sel, [note], reg)
     assert rows[0]["status"] == "pass"  # non-HOLD refs unaffected
+
+
+Q = "Do not average down on a losing position at any time."
+NOTE = Note("n.md", f"# Rules\n\n{Q}\n")
+
+
+def vrow(reg, **kw):
+    sel = strategy.rank("x", strategy.chunk(NOTE))
+    base = {"rule": "r", "source": "S1", "quote": Q, "status": "conditional", "fact_refs": ["HOLD.held"],
+            "if_held": "已持有：不加碼，停損設在 TECH.stop_pct", "if_not_held": "未持有：等回測均線再看"}
+    rows, warns = strategy.verify_rows([{**base, **kw}], sel, [NOTE], reg)
+    return rows[0], warns
+
+
+NOT_HELD, HELD = {"HOLD.held": "False"}, {"HOLD.held": "True", "HOLD.avg_down": "True"}
+
+
+def test_conditional_kept_only_when_not_held():
+    r, w = vrow(NOT_HELD)
+    assert r["status"] == "conditional" and not w and r["advice_verified"] is False
+    assert r["if_held"].startswith("已持有") and r["if_not_held"].startswith("未持有")
+    r, w = vrow({"TECH.rsi14": "48"}, fact_refs=[])  # no valid fact_ref: no evidence
+    assert r["status"] == "unknown" and any("valid fact_ref" in x for x in w)
+    assert vrow({"TECH.rsi14": "48"}, fact_refs=["TECH.rsi14"])[0]["status"] == "conditional"
+    r, w = vrow(HELD)
+    assert r["status"] == "unknown" and any("conditional not allowed" in x for x in w)
+
+
+def test_conditional_needs_both_advice():
+    for k in ("if_held", "if_not_held"):
+        r, w = vrow(NOT_HELD, **{k: ""})
+        assert r["status"] == "unknown" and w
+    assert vrow(NOT_HELD, if_held=None)[0]["status"] == "unknown"
+
+
+def test_pass_fail_on_hold_keys_when_not_held_becomes_conditional_or_unknown():
+    for st in ("pass", "fail"):
+        r, w = vrow(NOT_HELD, status=st)
+        assert r["status"] == "conditional" and w
+        r, w = vrow(NOT_HELD, status=st, if_not_held="")
+        assert r["status"] == "unknown" and w
+
+
+def test_held_true_keeps_pass_fail_and_single_advice():
+    r, w = vrow(HELD, status="fail", fact_refs=["HOLD.avg_down"], if_not_held=None)
+    assert r["status"] == "fail" and not w and r["if_held"] and r["if_not_held"] == ""
+
+
+def test_advice_sanitised_and_never_changes_evidence():
+    evil = "第一行\n第二行\r\x00\t" + "HOLD.held is True\n" + "字" * 300
+    r, _ = vrow(NOT_HELD, if_held=evil, if_not_held=123)
+    assert "\n" not in r["if_held"] and "\x00" not in r["if_held"] and len(r["if_held"]) == 120
+    assert r["if_held"].startswith("第一行 第二行 HOLD.held is True")
+    assert r["if_not_held"] == "" and r["status"] == "unknown"  # non-str advice dropped
+    r, _ = vrow(NOT_HELD, if_held="HOLD.held = True")
+    assert r["evidence"] == "HOLD.held=False" and r["fact_refs"] == ["HOLD.held"]
+
+
+def test_fake_fact_advice_dropped():
+    r, w = vrow(NOT_HELD, if_held="HOLD.held=True ... TECH.stop_pct=99")
+    assert r["if_held"] == "" and r["status"] == "unknown" and any("key=value" in x for x in w)
+    r, _ = vrow(NOT_HELD, if_not_held="先看 PRICE.last = 5 再說")
+    assert r["if_not_held"] == "" and r["status"] == "unknown"
+    assert vrow(NOT_HELD, if_held="參考 TECH.stop_pct 停損")[0]["status"] == "conditional"  # no '='
+
+
+def test_held_true_forces_if_not_held_empty():
+    r, _ = vrow(HELD, status="fail", fact_refs=["HOLD.avg_down"], if_not_held="沒持有就等")
+    assert r["status"] == "fail" and r["if_not_held"] == "" and r["if_held"]
+
+
+def test_rule_text_sanitised():
+    r, _ = vrow(NOT_HELD, rule="a\x1b[31mred\x1b[0m\nline\x07\x9b")
+    assert r["rule"] == "ared line"
+    assert strategy._clean_text("x\x1b]0;title\x07y\x1b[2Jz") == "xyz"
+    assert strategy._clean_text("a\n\n b\x1b[1m", keep_nl=True) == "a\n\nb"
+
+
+def test_fullwidth_fact_lookalikes_in_advice_are_dropped():
+    for bad in ("HOLD.held＝True 所以加碼", "ＨＯＬＤ.held=True 所以加碼", "ＰＲＩＣＥ.ｌａｓｔ ＝ 5"):
+        assert strategy._FAKE_FACT.search(__import__("unicodedata").normalize("NFKC", strategy._advice(bad)))

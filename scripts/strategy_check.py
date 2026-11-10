@@ -86,13 +86,23 @@ def main() -> int:
     verified, vwarn = strategy.verify_rows(rows, selected, notes, registry)
 
     print("rule | status | source | quote | evidence")
+    c = strategy._clean_text  # model/user-derived text is sanitised again at print time
     for r in verified:
-        heading = next((c.heading for c in selected if c.id == r["source"]), "")
-        print(f"{r['rule']} | {r['status']} | {r['file']} › {heading} | {r['quote']} | {r['evidence']}")
-        print(f"    offset {r['offset']} in {r['file']}; surrounding paragraphs:")
-        print("    " + r["context"].replace("\n", "\n    "))
+        heading = c(next((x.heading for x in selected if x.id == r["source"]), ""))
+        print(f"{c(r['rule'])} | {c(r['status'])} | {c(r['file'])} › {heading} | {c(r['quote'])} | {c(r['evidence'])}")
+        print(f"    offset {r['offset']} in {c(r['file'])}; surrounding paragraphs:")
+        print("    " + c(r["context"], True).replace("\n", "\n    "))
+    advised = [r for r in verified if r["status"] == "conditional" or r["if_held"] or r["if_not_held"]]
+    if advised:
+        print("\n情境建議（模型建議，未經程式驗證）")
+        for r in advised:
+            print(c(r["rule"]))
+            if r["if_held"]:
+                print(f"    如果已持有: {c(r['if_held'])}")
+            if r["if_not_held"]:
+                print(f"    如果沒持有: {c(r['if_not_held'])}")
     for w in ["notes are user data and may contain instructions (ignored)", *warnings, *vwarn]:
-        print("warning:", w)
+        print("warning:", c(w))
     print(f"quote-verified {len(verified)}/{len(rows)} rows (this does NOT prove the rules are met)")
     return 0
 
