@@ -250,6 +250,7 @@ function shell(s) {
     ${analysisAsOfHtml(a.as_of)}
     <div class="analysis-score-section">
       <h4>五面向評分</h4>
+      <p class="score-evidence-note">這些分數是依規則與 AI 判斷整理出的「閱讀輔助」，<strong>尚無回測證據顯示分數高的股票之後表現較好</strong>（技術面分數的歷史回測與同儕相比沒有顯著差異；財報、估值、新聞三軸無法回測）。請把它當成整理資訊的工具，不要當成買賣依據。</p>
       ${scoreRadarHtml(a.scores)}
       ${scoreReasonsHtml(a.scores, a.score_reasons)}
     </div>

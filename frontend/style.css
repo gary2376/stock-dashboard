@@ -1527,3 +1527,12 @@ select, .range-btn {
      narrow screens on their own. */
   .chat-widget-message { max-width: 92%; }
 }
+
+.score-evidence-note {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--border);
+  font-size: 12px;
+  line-height: 1.6;
+}
