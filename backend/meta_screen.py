@@ -242,7 +242,7 @@ def technical_score(result: dict | None) -> int:
         return 15
     edge = result.get("edge_count", 0)
     if result.get("final_pass"):
-        return 90 + min(10, edge - 3) * 2  # 3/4 edges -> 92, 4/4 -> 100
+        return 90 + min(10, edge - 3) * 2  # 3 edges -> 90, 4 edges -> 92 (top band is 90-92)
     if edge < 3:
         return 30 + edge * 10  # 0..2 edges while in an uptrend -> 30/40/50
     # edge>=3 but failed on abnormal pullback or stop/R:R — real setup, real disqualifier
@@ -280,7 +280,7 @@ def rsi14(closes: list) -> float | None:
     avg_gain = sum(gains) / n
     avg_loss = sum(losses) / n
     if avg_loss == 0:
-        return 100.0
+        return 50.0 if avg_gain == 0 else 100.0  # flat series: neutral, not overbought
     rs = avg_gain / avg_loss
     return round(100 - 100 / (1 + rs), 1)
 

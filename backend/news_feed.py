@@ -178,7 +178,7 @@ def _relevance(ticker: str, name: str):
     t = re.escape(ticker)
     # short tickers ('AA') collide with ordinary words/labels ("Class AA title") — they only count in
     # their formal contexts: (AA), NYSE:AA, NASDAQ:AA. Longer ones can stand alone.
-    sym = re.compile(rf"\({t}\)|(?:NYSE|NASDAQ|NYSEARCA)[:\s]{t}\b" if len(ticker) <= 3
+    sym = re.compile(rf"\({t}\)|(?:NYSE|NASDAQ|NYSEARCA)(?::\s*|\s+){t}\b" if len(ticker) <= 3
                      else rf"(?<![A-Za-z]){t}(?![A-Za-z])")
     return lambda t: full in t.lower() or bool(sym.search(t))
 
