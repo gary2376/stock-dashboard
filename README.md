@@ -1,5 +1,9 @@
 # 選股系統 v3.0
 
+> **免責聲明**：本工具為個人研究輔助軟體，由 AI 依公開資料自動產生分析，**不構成任何投資建議或買賣邀約**，也**不保證獲利**。分析可能出錯、過時或自相矛盾；資料來自第三方，可能延遲或不完整；AI 可能產生不實內容。所有投資決策與風險由使用者自行承擔，作者非證券投資顧問，不對任何損失負責。使用第三方資料請遵守各來源的服務條款。
+>
+> *Research aid only. AI-generated analysis from public data — not investment advice, no guarantee of results, may be wrong or outdated. You are solely responsible for your decisions and risk.*
+
 股票看板：卡片總覽（股價位階 + 獲利兩關檢查 + 可切換時間尺度的區間位置bar + 新增/移除股票 + 美股/台股篩選 + 搜尋 + 排序(含持倉損益) + 關注星號置頂 + 持倉損益 + 手動更新按鈕 + 備份匯出/匯入）＋ 點卡片進詳細頁（TradingView式走勢圖、手動畫趨勢線、bar可切換1個月～三年時間尺度、基本面、Codex或Claude產生的完整投資分析、買入日期/均價標記）＋ **持倉Dashboard**（持倉比重圓餅圖、各檔損益長條圖、總市值/總成本/總損益統計）。
 
 ## 架構
@@ -161,3 +165,7 @@ python scripts/strategy_check.py BBBB --dry-run  # 只看會送出什麼 prompt�
 ```
 
 輸出是一張規則對照表。**程式只驗證兩件事**：①引文真的逐字存在於你的筆記、且在所有筆記中唯一；②引用的事實代碼（如 `TECH.stage2`）真的存在，證據文字由程式依代碼重新產生。`pass`／`fail` 是模型的判斷，**不代表程式證明規則成立**。筆記會被當成「可能含指令的使用者資料」，但這只能降低 prompt injection 風險，無法消除。
+
+## 備份提醒
+
+「匯出備份」涵蓋觀察清單、關注、持倉與最新分析。**不含**：`data/analysis_history/`（分析快照，無法重新產生，請自行複製整個資料夾）、`data/strategy/`（你的策略筆記）、`data/profiles/`（自訂 profile）、聊天紀錄。
