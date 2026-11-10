@@ -150,3 +150,14 @@ python3 scripts/generate_analysis.py 2330.TW   # 只跑指定代號
 要用自己的：複製 `profiles/default/` 到別處，改完以 `STOCK_DASHBOARD_PROFILE=/你的/資料夾` 啟動（`scripts/run_local.sh` 會自動使用 `data/profiles/personal/`，該資料夾不會進 git）。只有 default 裡已存在的欄位、且型別相同的值才會生效，錯誤的值會被忽略並記在分析結果的 `warnings`。
 
 `rules.md` 只能影響模型的措辭與重點；**評分護欄的判斷邏輯寫在程式裡，profile 只能調門檻，不能關掉或繞過**。
+
+## 策略筆記檢查（原型，CLI）
+
+把你自己的交易策略／筆記（`.md`、`.txt`，單檔 ≤100KB、總量 ≤300KB、≤20 檔）放進 `data/strategy/`（不會進 git），然後：
+
+```bash
+python scripts/strategy_check.py BBBB            # 呼叫你登入的 claude CLI
+python scripts/strategy_check.py BBBB --dry-run  # 只看會送出什麼 prompt、選到哪些段落
+```
+
+輸出是一張規則對照表。**程式只驗證兩件事**：①引文真的逐字存在於你的筆記、且在所有筆記中唯一；②引用的事實代碼（如 `TECH.stage2`）真的存在，證據文字由程式依代碼重新產生。`pass`／`fail` 是模型的判斷，**不代表程式證明規則成立**。筆記會被當成「可能含指令的使用者資料」，但這只能降低 prompt injection 風險，無法消除。
