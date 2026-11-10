@@ -1,6 +1,7 @@
 {
   "name": "default",
   "signal_style": "state",
+  "include_position": 1,
   "technical": {
     "stop_max_pct": 7.0,
     "rr_min": 3.0,
