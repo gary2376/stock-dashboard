@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
+import os
+import stat
 import subprocess
 import sys
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,6 +32,8 @@ class NoCacheStaticFiles(StaticFiles):
         return response
 
 import data_provider as dp
+import strategy
+import strategy_runner
 from atomic import write_text_atomic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -48,9 +54,11 @@ TICKERS_FILE = DATA_DIR / "tickers.json"
 FAVORITES_FILE = DATA_DIR / "favorites.json"
 HOLDINGS_FILE = DATA_DIR / "holdings.json"
 ANALYSIS_DIR = DATA_DIR / "analysis"
+STRATEGY_DIR = DATA_DIR / "strategy"
 BACKUPS_DIR = DATA_DIR / "backups"
 BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
 
+logger = logging.getLogger(__name__)
 app = FastAPI(title="Stock Dashboard")
 
 MAX_BODY_BYTES = 5 * 1024 * 1024  # import is the only legitimately large request
@@ -381,35 +389,238 @@ def clear_holding(ticker: str):
     return {"status": "ok"}
 
 
-def _backup_payload() -> dict:
+# ---- strategy notes (the *.md/*.txt rules) and the LLM rule check ----
+STRATEGY_LIMITS = {"max_file_bytes": strategy.MAX_FILE, "max_total_bytes": strategy.MAX_TOTAL,
+                   "max_files": strategy.MAX_FILES}
+_strategy_lock = threading.Lock()
+
+
+def _require_note_name(name: str) -> str:
+    if name.startswith(".") or not strategy.NAME_RE.fullmatch(name):
+        raise HTTPException(400, "檔名只能是單純的 *.md / *.txt（不可含路徑或以 . 開頭）")
+    return name
+
+
+def _strategy_root() -> Path:
+    if STRATEGY_DIR.is_symlink():
+        raise HTTPException(400, "strategy 資料夾是符號連結，拒絕讀寫")
+    return STRATEGY_DIR
+
+
+def _strategy_sizes() -> dict:
+    """{name: bytes} of regular, non-symlink files with allowed names (what load_notes would consider)."""
+    root = _strategy_root()
+    out = {}
+    try:
+        entries = sorted(root.iterdir(), key=lambda x: x.name)
+    except OSError:
+        return out
+    for p in entries:
+        if p.name.startswith(".") or not strategy.NAME_RE.fullmatch(p.name):
+            continue
+        try:
+            st = p.lstat()
+        except OSError:
+            continue
+        if stat.S_ISREG(st.st_mode):
+            out[p.name] = st.st_size
+    return out
+
+
+def _read_note(name: str):
+    """File text, or None if missing / a symlink / not a regular file / unreadable (O_NOFOLLOW, bounded read)."""
+    try:
+        fd = os.open(_strategy_root() / name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(fd, "rb") as f:
+            if not stat.S_ISREG(os.fstat(f.fileno()).st_mode):
+                return None
+            return f.read(strategy.MAX_FILE + 1).decode("utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def _strategy_contents() -> dict:
+    out = {}
+    for name in _strategy_sizes():
+        text = _read_note(name)
+        if text is not None:
+            out[name] = text
+    return out
+
+
+def _check_note_content(name: str, content) -> int:
+    """Validates one note; returns its UTF-8 size. 400 bad name/content, 413 too large."""
+    _require_note_name(name)
+    if not isinstance(content, str) or "\x00" in content:
+        raise HTTPException(400, f"{name}: 內容必須是不含 NUL 字元的文字")
+    try:
+        size = len(content.encode("utf-8"))
+    except UnicodeEncodeError:
+        raise HTTPException(400, f"{name}: 內容不是有效的 UTF-8")
+    if size > strategy.MAX_FILE:
+        raise HTTPException(413, f"{name}: 超過單檔上限（{strategy.MAX_FILE // 1024}KB）")
+    return size
+
+
+def _check_strategy_totals(sizes: dict) -> None:
+    if len(sizes) > strategy.MAX_FILES:
+        raise HTTPException(413, f"策略筆記檔案數超過上限（{strategy.MAX_FILES}）")
+    if sum(sizes.values()) > strategy.MAX_TOTAL:
+        raise HTTPException(413, f"策略筆記總大小超過上限（{strategy.MAX_TOTAL // 1024}KB）")
+
+
+@app.get("/api/strategy")
+def strategy_list():
+    sizes = _strategy_sizes()
+    return {"files": [{"name": n, "size": z} for n, z in sizes.items()], "total_size": sum(sizes.values()),
+            "limits": STRATEGY_LIMITS}
+
+
+@app.get("/api/strategy/file/{name}")
+def strategy_get(name: str):
+    text = _read_note(_require_note_name(name))
+    if text is None:
+        raise HTTPException(404, "file not found")
+    return {"name": name, "content": text}
+
+
+class StrategyFileIn(BaseModel):
+    content: str
+
+
+@app.put("/api/strategy/file/{name}")
+def strategy_put(name: str, body: StrategyFileIn):
+    size = _check_note_content(name, body.content)
+    with _strategy_lock:
+        sizes = _strategy_sizes()
+        sizes[name] = size  # replacing an existing file counts only its delta
+        _check_strategy_totals(sizes)
+        write_text_atomic(STRATEGY_DIR / name, body.content)
+    return {"status": "ok", "name": name, "size": size}
+
+
+@app.delete("/api/strategy/file/{name}")
+def strategy_delete(name: str):
+    _require_note_name(name)
+    with _strategy_lock:
+        if name not in _strategy_sizes():  # also hides symlinks
+            raise HTTPException(404, "file not found")
+        (STRATEGY_DIR / name).unlink(missing_ok=True)
+    return {"status": "ok"}
+
+
+_check_lock = threading.Lock()
+CHECK_MAX_SECONDS = 600  # wall-clock cap: a hung check stops blocking new ones after this
+# running: ticker being checked; token/started identify the run; errors: ticker -> text
+_check_state: dict = {"running": None, "token": None, "started": 0.0, "errors": {}}
+CHECK_FAILED = "策略檢查失敗（詳細原因請看伺服器日誌）"
+KNOWN_CHECK_ERRORS = ("no strategy notes", "no relevant notes matched")
+
+
+def _check_error_text(e: BaseException) -> str:
+    """Only the runner's known user-facing messages are returned; anything else is logged, never echoed."""
+    if isinstance(e, ValueError) and str(e) in KNOWN_CHECK_ERRORS:
+        return str(e)
+    logger.error("strategy check failed", exc_info=e)
+    return CHECK_FAILED
+
+
+def _running_ticker():
+    """Caller holds _check_lock. A run older than the cap counts as dead."""
+    if _check_state["running"] and time.monotonic() - _check_state["started"] > CHECK_MAX_SECONDS:
+        _check_state["running"] = None
+    return _check_state["running"]
+
+
+def _run_strategy_check(ticker: str, token) -> None:
+    err, result = None, None
+    try:
+        result = strategy_runner.run_check(ticker, notes_dir=STRATEGY_DIR)
+    except BaseException as e:  # noqa: BLE001 — the state must always be released
+        err = _check_error_text(e)
+    finally:
+        with _check_lock:
+            # a stale (capped) run may not publish a result, set an error or clear a newer run's state
+            if _check_state["token"] is token:
+                _check_state["running"] = None
+                _check_state["errors"].pop(ticker, None)
+                if result is not None:
+                    try:
+                        strategy_runner.save_result(ticker, result)
+                    except OSError as e:
+                        err = _check_error_text(e)
+                if err:
+                    _check_state["errors"][ticker] = err
+
+
+@app.post("/api/strategy/check/{ticker}")
+def strategy_check_start(ticker: str):
+    ticker = _require_valid_ticker(ticker)
+    if ticker not in _tickers():
+        raise HTTPException(404, "ticker not in watchlist")
+    if not any(strategy.chunk(n) for n in strategy.load_notes(_strategy_root())[0]):
+        raise HTTPException(400, "no strategy notes")
+    token = object()
+    with _check_lock:
+        if _running_ticker():
+            raise HTTPException(409, "已經有一個策略檢查在執行中，稍等一下")
+        _check_state.update(running=ticker, token=token, started=time.monotonic())
+    try:
+        threading.Thread(target=_run_strategy_check, args=(ticker, token), daemon=True).start()
+    except BaseException:
+        with _check_lock:
+            if _check_state["token"] is token:
+                _check_state["running"] = None
+        raise
+    return {"status": "started"}
+
+
+@app.get("/api/strategy/check/{ticker}")
+def strategy_check_status(ticker: str):
+    ticker = _require_valid_ticker(ticker)
+    with _check_lock:
+        if _running_ticker() == ticker:
+            return {"status": "running"}
+        err = _check_state["errors"].get(ticker)
+    if err:
+        return {"status": "error", "error": err}
+    result = strategy_runner.load_result(ticker)
+    return {"status": "done", "result": result} if result is not None else {"status": "none"}
+
+
+def _backup_payload(include_strategy: bool = False, extra_analysis_tickers=()) -> dict:
     """The user's own data (watchlist, favorites, holdings, codex/claude analysis) — not
     price_cache, that's trivially cheap to re-fetch and would just bloat the file."""
     tickers = _tickers()
     analysis = {}
-    for t in tickers:
+    for t in [*tickers, *(x for x in extra_analysis_tickers if x not in tickers)]:
         a = _analysis(t)
         if a is not None:
             analysis[t] = a
-    return {
+    out = {
         "exported_at": datetime.now().isoformat(timespec="seconds"),
         "tickers": tickers,
         "favorites": _favorites(),
         "holdings": _holdings(),
         "analysis": analysis,
     }
+    if include_strategy:
+        out["strategy"] = _strategy_contents()
+    return out
 
 
-def _write_backup_file(prefix: str) -> Path:
+def _write_backup_file(prefix: str, extra_analysis_tickers=()) -> Path:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")  # microseconds: two backups in one second stay distinct
     path = BACKUPS_DIR / f"{prefix}-{stamp}.json"
-    write_text_atomic(path, json.dumps(_backup_payload(), ensure_ascii=False, indent=2))
+    write_text_atomic(path, json.dumps(_backup_payload(True, extra_analysis_tickers), ensure_ascii=False, indent=2))
     return path
 
 
 @app.get("/api/backup/export")
-def export_backup():
-    """Read-only (a GET must not write): returns the backup JSON for the browser to download."""
-    return _backup_payload()
+def export_backup(include_strategy: bool = False):
+    """Read-only (a GET must not write): returns the backup JSON for the browser to download.
+    Strategy notes are included only on request (they are the text, can be large)."""
+    return _backup_payload(include_strategy)
 
 
 @app.post("/api/backup/snapshot")
@@ -423,6 +634,7 @@ class BackupIn(BaseModel):
     favorites: list[str] = []
     holdings: dict = {}
     analysis: dict = {}
+    strategy: Optional[dict] = None
 
 
 IMPORT_LIMITS = {"tickers": 500, "favorites": 500, "holdings_tickers": 500, "lots_total": 5000,
@@ -521,17 +733,33 @@ def import_backup(body: BackupIn):
             raise HTTPException(413, f"{t} 的分析資料超過上限（200KB）")
         analysis_files[ANALYSIS_DIR / f"{t}.json"] = text
 
-    with _holdings_lock:
+    with _holdings_lock, _strategy_lock:
+        # strategy notes: MERGE (write/overwrite listed files, never delete others). Validated under the lock
+        # so a concurrent PUT cannot push the total past the limits between check and commit.
+        strategy_files: dict[Path, str] = {}
+        if body.strategy is not None:
+            if not isinstance(body.strategy, dict):
+                raise HTTPException(400, "strategy 格式錯誤")
+            if len(body.strategy) > strategy.MAX_FILES:
+                raise HTTPException(413, f"策略筆記檔案數超過上限（{strategy.MAX_FILES}）")
+            merged = _strategy_sizes()
+            for n, text in body.strategy.items():
+                merged[n] = _check_note_content(n, text)
+                if (STRATEGY_DIR / n).is_symlink():
+                    raise HTTPException(400, f"{n}: 目標是符號連結，拒絕覆寫")
+                strategy_files[STRATEGY_DIR / n] = text
+            _check_strategy_totals(merged)
         # everything validated; keep a copy of what's about to be overwritten before touching it
-        pre_backup = _write_backup_file("pre-import").name
+        pre_backup = _write_backup_file("pre-import", [p.stem for p in analysis_files]).name
         _commit_files({
             TICKERS_FILE: json.dumps(tickers, ensure_ascii=False, indent=2),
             FAVORITES_FILE: json.dumps(favorites, ensure_ascii=False, indent=2),
             HOLDINGS_FILE: json.dumps(normalized_holdings, ensure_ascii=False, indent=2),
             **analysis_files,
+            **strategy_files,
         })
     return {"status": "ok", "tickers": len(tickers), "holdings": lot_total,
-            "analysis": len(analysis_files), "pre_import_backup": pre_backup}
+            "analysis": len(analysis_files), "strategy": len(strategy_files), "pre_import_backup": pre_backup}
 
 
 @app.post("/api/refresh/prices")

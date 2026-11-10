@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>策略筆記 - 選股系統</title>
+<link rel="stylesheet" href="style.css" />
+<script src="disclaimer.js"></script>
+</head>
+<body>
+<main class="strategy-wrap">
+  <a class="back-link" href="index.html">← 回選股總覽</a>
+  <header class="strategy-header">
+    <div>
+      <h1>策略筆記</h1>
+      <p class="subtitle">集中管理會用於個股策略檢查的 Markdown 或純文字筆記。</p>
+    </div>
+    <div id="strategyUsage" class="strategy-usage" aria-live="polite">載入用量中…</div>
+  </header>
+
+  <aside class="strategy-privacy" aria-labelledby="strategyPrivacyTitle">
+    <h2 id="strategyPrivacyTitle">隱私提醒</h2>
+    <p>執行策略檢查時，筆記會傳送至您本人已登入的 Claude／Codex CLI。檔案只儲存在這台機器的 <code>data/strategy</code>，絕對不要提交到版本控制。</p>
+  </aside>
+
+  <p id="strategyStatus" class="status-msg strategy-status" role="status" aria-live="polite"></p>
+
+  <section class="panel" aria-labelledby="strategyFilesTitle">
+    <div class="strategy-section-heading">
+      <h2 id="strategyFilesTitle">已儲存筆記</h2>
+      <button id="refreshStrategyBtn" class="range-btn" type="button">重新整理</button>
+    </div>
+    <div id="strategyFileList" class="strategy-file-list" aria-busy="true">
+      <div class="empty strategy-empty">載入中…</div>
+    </div>
+  </section>
+
+  <section id="strategyViewer" class="panel strategy-viewer" aria-labelledby="strategyViewerTitle" hidden>
+    <div class="strategy-section-heading">
+      <h2 id="strategyViewerTitle">筆記內容</h2>
+      <button id="closeStrategyViewerBtn" class="range-btn" type="button">關閉</button>
+    </div>
+    <pre id="strategyViewerContent" tabindex="0"></pre>
+  </section>
+
+  <div class="strategy-editor-grid">
+    <section class="panel" aria-labelledby="strategyUploadTitle">
+      <h2 id="strategyUploadTitle">上傳檔案</h2>
+      <p class="strategy-help" id="strategyUploadHelp">支援 .md、.txt；單一檔案不得超過 100KB。</p>
+      <label class="section-label" for="strategyFileInput">選擇筆記檔案</label>
+      <input id="strategyFileInput" class="strategy-file-input" type="file" accept=".md,.txt,text/markdown,text/plain" aria-describedby="strategyUploadHelp" />
+      <button id="uploadStrategyBtn" class="action-btn" type="button">上傳筆記</button>
+    </section>
+
+    <section class="panel" aria-labelledby="strategyPasteTitle">
+      <h2 id="strategyPasteTitle">貼上文字</h2>
+      <form id="strategyPasteForm" class="strategy-paste-form">
+        <label class="section-label" for="strategyFilename">檔名</label>
+        <input id="strategyFilename" class="text-input" name="filename" type="text" placeholder="例如：buy-rules.md" autocomplete="off" required aria-describedby="strategyFilenameHelp" />
+        <span id="strategyFilenameHelp" class="strategy-help">請包含 .md 或 .txt 副檔名；檔名規則由伺服器檢查。</span>
+        <label class="section-label" for="strategyContent">筆記內容</label>
+        <textarea id="strategyContent" class="strategy-textarea" name="content" rows="10" required></textarea>
+        <button class="action-btn" type="submit">儲存筆記</button>
+      </form>
+    </section>
+  </div>
+</main>
+<script src="strategy.js"></script>
+</body>
+</html>

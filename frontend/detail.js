@@ -16,6 +16,16 @@ let pendingMarkerEl = null;
 let currentHolding = null; // {lots, lot_count, first_date, avg_price, total_shares, pl_pct, pl_amount, value} | null
 let holdingPriceLine = null;
 let radarChart = null;
+let strategyPollTimer = null;
+let strategyPollDeadline = 0;
+let strategyPageActive = true;
+let strategyStatusGeneration = 0;
+let strategyPollFailureCount = 0;
+let strategyCheckIsRunning = false;
+
+const STRATEGY_POLL_INTERVAL_MS = 3000;
+const STRATEGY_POLL_LIMIT_MS = 10 * 60 * 1000;
+const STRATEGY_DISCLAIMER = "引文與事實引用由程式驗證；通過／未通過與情境建議是模型的判斷，不代表規則已被證明成立，也不構成投資建議。";
 
 const SCORE_KEYS = ["technical", "fundamentals", "valuation", "news", "market"];
 const SCORE_LABELS = ["技術面", "財報", "估值", "新聞時事", "市場方向"];
@@ -220,6 +230,21 @@ function shell(s) {
     </div>
   </div>
 
+  <section class="panel strategy-check-panel" id="strategyCheckPanel" aria-labelledby="strategyCheckTitle">
+    <div class="strategy-check-heading">
+      <div>
+        <h3 id="strategyCheckTitle">策略檢查</h3>
+        <p class="strategy-check-intro">依照「策略筆記」中的規則檢查這檔股票。</p>
+      </div>
+      <button class="action-btn" id="runStrategyCheckBtn" type="button">執行策略檢查</button>
+    </div>
+    <p class="strategy-result-disclaimer">${STRATEGY_DISCLAIMER}</p>
+    <p id="strategyCheckStatus" class="strategy-check-status" role="status" aria-live="polite"></p>
+    <div id="strategyCheckResult">
+      <p class="strategy-result-empty">正在讀取已儲存的檢查結果…</p>
+    </div>
+  </section>
+
   <div class="panel">
     <h3>投資分析${a.ticker ? "" : "（尚未產生，等候Codex背景產生或執行 scripts/generate_analysis.py）"}</h3>
     ${analysisAsOfHtml(a.as_of)}
@@ -233,6 +258,7 @@ function shell(s) {
       <div class="analysis-block"><h4>時事與世界局勢影響</h4><p>${escapeHtml(a.world_context) || "--"}</p></div>
       <div class="analysis-block"><h4>反方觀點</h4><p>${escapeHtml(a.bear_case) || "--"}</p></div>
       <div class="analysis-block"><h4>現實檢視</h4><p>${escapeHtml(a.reality_check) || "--"}</p></div>
+      ${a.position_note ? `<div class="analysis-block"><h4>你的持倉與情境（模型說明，不影響分數）</h4><p>${escapeHtml(a.position_note)}</p></div>` : ""}
       <div class="analysis-block"><h4>技術操作訊號（日／週／季／動能）</h4>${tradeSignalHtml(a.trade_signal)}</div>
       <div class="analysis-block"><h4>護城河</h4><p>${escapeHtml(a.moat) || "--"}</p></div>
       <div class="analysis-block"><h4>財務體質</h4><p>${escapeHtml(a.financial_health) || "--"}</p></div>
@@ -479,7 +505,302 @@ async function init() {
   renderChart(full.candles);
   renderScoreRadar(full.analysis?.scores);
   applyHoldingMarker();
+  wireStrategyCheckPanel();
 }
+
+// --- strategy check ------------------------------------------------------
+
+function strategyCheckUrl() {
+  return `/api/strategy/check/${encodeURIComponent(ticker)}`;
+}
+
+async function strategyResponseDetail(response) {
+  try {
+    const body = await response.json();
+    if (typeof body.detail === "string") return body.detail;
+    if (body.detail) return JSON.stringify(body.detail);
+  } catch (_) {
+    // A non-JSON server response falls back to its HTTP status below.
+  }
+  return `HTTP ${response.status}`;
+}
+
+function setStrategyCheckStatus(message, isError = false) {
+  const status = document.getElementById("strategyCheckStatus");
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle("error", isError);
+}
+
+function setStrategyCheckRunning(running) {
+  strategyCheckIsRunning = running;
+  const panel = document.getElementById("strategyCheckPanel");
+  const button = document.getElementById("runStrategyCheckBtn");
+  if (panel) panel.setAttribute("aria-busy", String(running));
+  if (button) {
+    button.disabled = running;
+    button.textContent = running ? "檢查執行中…" : "執行策略檢查";
+  }
+}
+
+function strategyText(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.textContent = text;
+  return node;
+}
+
+function appendStrategyMeta(container, label, value) {
+  if (value === null || value === undefined || value === "") return;
+  const item = document.createElement("span");
+  const labelNode = document.createElement("strong");
+  labelNode.textContent = `${label}：`;
+  item.append(labelNode, document.createTextNode(String(value)));
+  container.appendChild(item);
+}
+
+function strategyStatusLabel(status) {
+  return {
+    pass: "通過",
+    fail: "未通過",
+    unknown: "未知",
+    conditional: "有條件",
+  }[status] || status || "未知";
+}
+
+function renderStrategyAdvice(row) {
+  const held = typeof row.if_held === "string" ? row.if_held.trim() : "";
+  const notHeld = typeof row.if_not_held === "string" ? row.if_not_held.trim() : "";
+  if (!held && !notHeld) return null;
+
+  const block = document.createElement("section");
+  block.className = "strategy-advice";
+  block.appendChild(strategyText("h5", "", "情境建議（模型建議，未經程式驗證）"));
+  if (held) {
+    const paragraph = document.createElement("p");
+    paragraph.append(strategyText("strong", "", "如果已持有："), document.createTextNode(held));
+    block.appendChild(paragraph);
+  }
+  if (notHeld) {
+    const paragraph = document.createElement("p");
+    paragraph.append(strategyText("strong", "", "如果沒持有："), document.createTextNode(notHeld));
+    block.appendChild(paragraph);
+  }
+  return block;
+}
+
+function renderStrategyRow(rawRow, index) {
+  const row = rawRow && typeof rawRow === "object" ? rawRow : {};
+  const article = document.createElement("article");
+  article.className = "strategy-result-row";
+
+  const heading = document.createElement("div");
+  heading.className = "strategy-result-row-heading";
+  const badge = strategyText("span", `strategy-status-badge status-${row.status || "unknown"}`, strategyStatusLabel(row.status));
+  const rule = strategyText("h4", "", row.rule || `規則 ${index + 1}`);
+  heading.append(badge, rule);
+  article.appendChild(heading);
+
+  const source = document.createElement("p");
+  source.className = "strategy-result-source";
+  const sourceParts = [];
+  if (row.source) sourceParts.push(String(row.source));
+  if (row.file) sourceParts.push(`${row.file}${row.offset !== null && row.offset !== undefined ? `:${row.offset}` : ""}`);
+  source.textContent = sourceParts.length ? `來源：${sourceParts.join(" · ")}` : "來源：未提供";
+  article.appendChild(source);
+
+  const quoteDetails = document.createElement("details");
+  quoteDetails.className = "strategy-quote-details";
+  quoteDetails.appendChild(strategyText("summary", "", "查看逐字引文"));
+  quoteDetails.appendChild(strategyText("blockquote", "strategy-verbatim-quote", row.quote || "（無引文）"));
+  quoteDetails.appendChild(strategyText("p", "strategy-quote-context", row.context || "（無上下文）"));
+  article.appendChild(quoteDetails);
+
+  const evidence = document.createElement("p");
+  evidence.className = "strategy-evidence";
+  evidence.append(strategyText("strong", "", "判斷依據："), document.createTextNode(String(row.evidence || "（未提供）")));
+  article.appendChild(evidence);
+
+  if (Array.isArray(row.fact_refs) && row.fact_refs.length) {
+    const refs = document.createElement("p");
+    refs.className = "strategy-fact-refs";
+    refs.append(strategyText("strong", "", "事實引用："), document.createTextNode(row.fact_refs.map(String).join("、")));
+    article.appendChild(refs);
+  }
+
+  const advice = renderStrategyAdvice(row);
+  if (advice) article.appendChild(advice);
+  return article;
+}
+
+function renderStrategyWarnings(warnings) {
+  if (!Array.isArray(warnings) || !warnings.length) return null;
+  const details = document.createElement("details");
+  details.className = "strategy-warnings";
+  details.appendChild(strategyText("summary", "", `警告（${warnings.length}）`));
+  const list = document.createElement("ul");
+  warnings.forEach(warning => list.appendChild(strategyText("li", "", String(warning))));
+  details.appendChild(list);
+  return details;
+}
+
+function renderStrategyResult(result) {
+  const container = document.getElementById("strategyCheckResult");
+  if (!container) return;
+  container.replaceChildren();
+
+  const meta = document.createElement("div");
+  meta.className = "strategy-result-meta";
+  appendStrategyMeta(meta, "產生時間", result.generated_at);
+  appendStrategyMeta(meta, "引擎", result.engine);
+  const holdingsText = Number.isInteger(result.holdings_lots)
+    ? `已納入 ${result.holdings_lots} 批持倉`
+    : "未納入持倉";
+  appendStrategyMeta(meta, "持倉", holdingsText);
+  container.appendChild(meta);
+
+  const warnings = renderStrategyWarnings(result.warnings);
+  if (warnings) container.appendChild(warnings);
+
+  const rows = Array.isArray(result.rows) ? result.rows : [];
+  if (!rows.length) {
+    container.appendChild(strategyText("p", "strategy-result-empty", "這次檢查沒有回傳規則結果。"));
+    return;
+  }
+  const list = document.createElement("div");
+  list.className = "strategy-result-list";
+  rows.forEach((row, index) => list.appendChild(renderStrategyRow(row, index)));
+  container.appendChild(list);
+}
+
+function stopStrategyPolling() {
+  if (strategyPollTimer !== null) {
+    clearTimeout(strategyPollTimer);
+    strategyPollTimer = null;
+  }
+}
+
+function scheduleStrategyPoll(delay = STRATEGY_POLL_INTERVAL_MS) {
+  stopStrategyPolling();
+  if (!strategyPageActive) return;
+  const remaining = strategyPollDeadline - Date.now();
+  if (remaining <= 0) {
+    setStrategyCheckRunning(false);
+    setStrategyCheckStatus("策略檢查已超過 10 分鐘，已停止自動查詢；可重新整理頁面查看最新狀態。", true);
+    return;
+  }
+  if (delay >= remaining) {
+    strategyPollTimer = setTimeout(() => {
+      strategyPollTimer = null;
+      setStrategyCheckRunning(false);
+      setStrategyCheckStatus("策略檢查已超過 10 分鐘，已停止自動查詢；可重新整理頁面查看最新狀態。", true);
+    }, remaining);
+    return;
+  }
+  strategyPollTimer = setTimeout(() => loadStrategyCheck({ polling: true }), delay);
+}
+
+async function loadStrategyCheck(options = {}) {
+  const generation = ++strategyStatusGeneration;
+  try {
+    const response = await fetch(strategyCheckUrl());
+    if (!response.ok) throw new Error(await strategyResponseDetail(response));
+    const data = await response.json();
+    if (generation !== strategyStatusGeneration) return;
+    strategyPollFailureCount = 0;
+    if (data.status === "running") {
+      setStrategyCheckRunning(true);
+      setStrategyCheckStatus("策略檢查執行中，約每 3 秒更新一次。", false);
+      if (!strategyPollDeadline || !options.polling) strategyPollDeadline = Date.now() + STRATEGY_POLL_LIMIT_MS;
+      scheduleStrategyPoll();
+      return;
+    }
+
+    stopStrategyPolling();
+    strategyPollDeadline = 0;
+    setStrategyCheckRunning(false);
+    if (data.status === "done" && data.result && String(data.result.ticker || "").toUpperCase() === String(ticker || "").toUpperCase()) {
+      renderStrategyResult(data.result);
+      setStrategyCheckStatus(options.initial ? "已載入上次儲存的策略檢查結果。" : "策略檢查完成。", false);
+    } else if (data.status === "error") {
+      setStrategyCheckStatus(`策略檢查失敗：${data.error || "未知錯誤"}`, true);
+    } else {
+      const container = document.getElementById("strategyCheckResult");
+      if (container) {
+        container.replaceChildren(strategyText("p", "strategy-result-empty", "尚無策略檢查結果。"));
+      }
+      setStrategyCheckStatus("", false);
+    }
+  } catch (error) {
+    if (generation !== strategyStatusGeneration) return;
+    if (options.polling && strategyPageActive && Date.now() < strategyPollDeadline) {
+      strategyPollFailureCount += 1;
+      if (strategyPollFailureCount <= 3) {
+        const retryDelay = STRATEGY_POLL_INTERVAL_MS * (2 ** (strategyPollFailureCount - 1));
+        setStrategyCheckRunning(true);
+        setStrategyCheckStatus(`連線發生問題，將在 ${retryDelay / 1000} 秒後重試（${strategyPollFailureCount}/3）：${error.message}`, true);
+        scheduleStrategyPoll(retryDelay);
+        return;
+      }
+    }
+    stopStrategyPolling();
+    strategyPollDeadline = 0;
+    setStrategyCheckRunning(false);
+    setStrategyCheckStatus(`讀取策略檢查失敗：${error.message}`, true);
+  }
+}
+
+async function runStrategyCheck() {
+  stopStrategyPolling();
+  strategyStatusGeneration += 1;
+  strategyPollFailureCount = 0;
+  strategyPollDeadline = Date.now() + STRATEGY_POLL_LIMIT_MS;
+  setStrategyCheckRunning(true);
+  setStrategyCheckStatus("正在啟動策略檢查…", false);
+  try {
+    const response = await fetch(strategyCheckUrl(), { method: "POST" });
+    if (response.status === 409) {
+      const detail = await strategyResponseDetail(response);
+      strategyPollDeadline = 0;
+      setStrategyCheckRunning(false);
+      setStrategyCheckStatus(detail || "目前已有另一個策略檢查正在執行，請稍後再試。", true);
+      return;
+    }
+    if (!response.ok) throw new Error(await strategyResponseDetail(response));
+    setStrategyCheckStatus("策略檢查已啟動，約每 3 秒更新一次。", false);
+    await loadStrategyCheck({ polling: true });
+  } catch (error) {
+    strategyPollDeadline = 0;
+    setStrategyCheckRunning(false);
+    setStrategyCheckStatus(`無法執行策略檢查：${error.message}`, true);
+  }
+}
+
+function wireStrategyCheckPanel() {
+  document.getElementById("runStrategyCheckBtn").addEventListener("click", runStrategyCheck);
+  loadStrategyCheck({ initial: true });
+}
+
+function leaveStrategyPage() {
+  strategyPageActive = false;
+  stopStrategyPolling();
+}
+
+function restoreStrategyPage() {
+  strategyPageActive = true;
+  if (!document.getElementById("strategyCheckPanel")) return;
+  if (strategyCheckIsRunning && strategyPollDeadline && Date.now() < strategyPollDeadline) {
+    loadStrategyCheck({ polling: true });
+  } else {
+    loadStrategyCheck();
+  }
+}
+
+window.addEventListener("pagehide", leaveStrategyPage);
+window.addEventListener("beforeunload", leaveStrategyPage);
+window.addEventListener("pageshow", event => {
+  if (event.persisted || !strategyPageActive) restoreStrategyPage();
+});
 
 // --- holding (買入日期/均價) --------------------------------------------
 

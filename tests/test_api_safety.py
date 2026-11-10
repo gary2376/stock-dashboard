@@ -13,7 +13,7 @@ def client(tmp_path, monkeypatch):
     (d / "backups").mkdir()
     for name, val in {
         "DATA_DIR": d, "TICKERS_FILE": d / "tickers.json", "FAVORITES_FILE": d / "favorites.json",
-        "HOLDINGS_FILE": d / "holdings.json", "ANALYSIS_DIR": d / "analysis", "BACKUPS_DIR": d / "backups",
+        "HOLDINGS_FILE": d / "holdings.json", "ANALYSIS_DIR": d / "analysis", "STRATEGY_DIR": d / "strategy", "BACKUPS_DIR": d / "backups",
         "CHAT_HISTORY_FILE": d / "chat_history.json",
     }.items():
         monkeypatch.setattr(appmod, name, val)

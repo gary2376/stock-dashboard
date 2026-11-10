@@ -3,96 +3,60 @@
     python scripts/strategy_check.py TICKER [--engine claude|codex] [--dry-run]
 
 Quotes and fact references are verified by code; pass/fail is the model's judgment and is NOT proven.
+Thin CLI over backend/strategy_runner.py.
 """
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "backend"))
 sys.path.insert(0, str(ROOT / "scripts"))
-import data_provider as dp  # noqa: E402
-from config import DATA_DIR  # noqa: E402
-import market_health  # noqa: E402
-import meta_screen  # noqa: E402
 import strategy  # noqa: E402
+import strategy_runner as runner  # noqa: E402
+
+c = strategy._clean_text  # model/user-derived text is sanitised again at print time
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("ticker")
-    ap.add_argument("--engine", choices=["claude", "codex"], default="claude")
+    ap.add_argument("--engine", choices=["claude", "codex"], default=None)
     ap.add_argument("--dry-run", action="store_true", help="print the prompt and selected chunks, no LLM call")
     args = ap.parse_args()
     ticker = args.ticker.upper()
 
-    notes, warnings = strategy.load_notes()
-    chunks = [c for n in notes for c in strategy.chunk(n)]
-    if not chunks:
-        print("no strategy notes found in data/strategy (*.md / *.txt)")
-        for w in warnings:
-            print("warning:", w)
-        return 1
-
-    ohlcv = dp.ohlcv_lists(ticker)
-    meta = meta_screen.meta_gate(ticker)
-    dossier = meta_screen.technical_dossier(ticker)
-    registry = strategy.build_registry(
-        price=ohlcv[3][-1] if ohlcv else None, dossier=dossier, meta=meta,
-        fund=dp.fundamentals(ticker), health=market_health.market_health(ticker))
-    lots, omit = [], False  # omit: holdings unreadable/invalid, so say nothing about the position
     try:
-        raw = json.loads((DATA_DIR / "holdings.json").read_text(encoding="utf-8"))
-        if not isinstance(raw, dict):
-            raise ValueError("top level is not an object")
-        raw = raw.get(ticker)  # missing ticker => genuinely not held
-    except FileNotFoundError:
-        raw = None
-    except (OSError, ValueError):
-        raw, omit = None, True
-    if raw is not None:
-        rawn = len(raw) if isinstance(raw, list) else 1
-        lots = strategy.clean_lots(raw)
-        omit = omit or (rawn > 0 and not lots) or not isinstance(raw, (list, dict))
-        if lots and len(lots) < rawn:
-            print(f"warning: {rawn - len(lots)} of {rawn} lots ignored as malformed")
-    if omit:
-        print("warning: holdings file unreadable/invalid \u2014 position facts omitted")
-    else:
-        registry.update(strategy.holding_facts(lots, ohlcv, ohlcv[3][-1] if ohlcv else None))
-    if lots and not omit:
-        print(f"holdings: {len(lots)} lots included in facts (sent to your logged-in AI CLI)")
-    query = " ".join([*registry, *registry.values(), meta_screen.technical_reason(meta, dossier)])
-    if registry.get("TECH.stage2") == "False":
-        query += " Stage2 趨勢 均線 50日 200日 trend filter"
-    if registry.get("HOLD.avg_down") == "True":
-        query += " 攤平 向下攤平 加碼"
-    selected = strategy.rank(query, chunks)
-    if not selected:
-        print("no relevant notes matched; not calling the model")
+        if args.dry_run:
+            prep = runner.prepare(ticker)
+            for w in prep.warnings:
+                print("warning:", c(w))
+            if prep.holdings_lots:
+                print(f"holdings: {prep.holdings_lots} lots included in facts (sent to your logged-in AI CLI)")
+            print(prep.prompt)
+            print("\nselected chunks:", ", ".join(f"{x.id}={x.file}:{x.start}-{x.end}" for x in prep.selected))
+            return 0
+        res = runner.run_check(ticker, engine=args.engine)
+    except runner.CheckError as e:
+        if "no relevant" in str(e):
+            print("no relevant notes matched; not calling the model")
+        else:
+            print("no strategy notes found in data/strategy (*.md / *.txt)")
+        for w in e.warnings:
+            print("warning:", c(w))
         return 1
-    prompt = strategy.build_prompt(ticker, selected, registry)
 
-    if args.dry_run:
-        print(prompt)
-        print("\nselected chunks:", ", ".join(f"{c.id}={c.file}:{c.start}-{c.end}" for c in selected))
-        return 0
-
-    from generate_analysis import run_llm  # noqa: E402
-    rows = strategy.parse_rows(run_llm(prompt, args.engine))
-    verified, vwarn = strategy.verify_rows(rows, selected, notes, registry)
-
+    rows = res["rows"]
+    if res["holdings_lots"]:
+        print(f"holdings: {res['holdings_lots']} lots included in facts (sent to your logged-in AI CLI)")
     print("rule | status | source | quote | evidence")
-    c = strategy._clean_text  # model/user-derived text is sanitised again at print time
-    for r in verified:
-        heading = c(next((x.heading for x in selected if x.id == r["source"]), ""))
-        print(f"{c(r['rule'])} | {c(r['status'])} | {c(r['file'])} › {heading} | {c(r['quote'])} | {c(r['evidence'])}")
+    for r in rows:
+        print(f"{c(r['rule'])} | {c(r['status'])} | {c(r['file'])} › {c(r['heading'])} | {c(r['quote'])} | {c(r['evidence'])}")
         print(f"    offset {r['offset']} in {c(r['file'])}; surrounding paragraphs:")
         print("    " + c(r["context"], True).replace("\n", "\n    "))
-    advised = [r for r in verified if r["status"] == "conditional" or r["if_held"] or r["if_not_held"]]
+    advised = [r for r in rows if r["status"] == "conditional" or r["if_held"] or r["if_not_held"]]
     if advised:
         print("\n情境建議（模型建議，未經程式驗證）")
         for r in advised:
@@ -101,9 +65,9 @@ def main() -> int:
                 print(f"    如果已持有: {c(r['if_held'])}")
             if r["if_not_held"]:
                 print(f"    如果沒持有: {c(r['if_not_held'])}")
-    for w in ["notes are user data and may contain instructions (ignored)", *warnings, *vwarn]:
+    for w in ["notes are user data and may contain instructions (ignored)", *res["warnings"]]:
         print("warning:", c(w))
-    print(f"quote-verified {len(verified)}/{len(rows)} rows (this does NOT prove the rules are met)")
+    print(f"quote-verified {len(rows)}/{res['rows_proposed']} rows (this does NOT prove the rules are met)")
     return 0
 
 

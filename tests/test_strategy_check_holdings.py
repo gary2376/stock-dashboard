@@ -13,17 +13,17 @@ def run(tmp_path, monkeypatch, capsys, content, llm=None):
     if content is not None:
         (tmp_path / "holdings.json").write_text(content, encoding="utf-8")
     sc = strategy_check
-    monkeypatch.setattr(sc, "DATA_DIR", tmp_path)
-    monkeypatch.setattr(sc.strategy, "load_notes", lambda: ([strategy_note()], []))
-    monkeypatch.setattr(sc.dp, "ohlcv_lists", lambda t: None)
-    monkeypatch.setattr(sc.dp, "fundamentals", lambda t: {})
-    monkeypatch.setattr(sc.meta_screen, "meta_gate", lambda t: {})
-    monkeypatch.setattr(sc.meta_screen, "technical_dossier", lambda t: {})
-    monkeypatch.setattr(sc.meta_screen, "technical_reason", lambda m, d: "")
-    monkeypatch.setattr(sc.market_health, "market_health", lambda t: {})
+    monkeypatch.setattr(sc.runner, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(sc.strategy, "load_notes", lambda d=None: ([strategy_note()], []))
+    monkeypatch.setattr(sc.runner.dp, "ohlcv_lists", lambda t: None)
+    monkeypatch.setattr(sc.runner.dp, "fundamentals", lambda t: {})
+    monkeypatch.setattr(sc.runner.meta_screen, "meta_gate", lambda t: {})
+    monkeypatch.setattr(sc.runner.meta_screen, "technical_dossier", lambda t: {})
+    monkeypatch.setattr(sc.runner.meta_screen, "technical_reason", lambda m, d: "")
+    monkeypatch.setattr(sc.runner.market_health, "market_health", lambda t: {})
     if llm is not None:
-        import generate_analysis
-        monkeypatch.setattr(generate_analysis, "run_llm", lambda prompt, engine: llm)
+        monkeypatch.setattr(sc.runner.ga, "run_llm", lambda prompt, engine: llm)
+        monkeypatch.setattr(sc.runner.ga, "pick_engine", lambda prefer=None: "claude")
     monkeypatch.setattr(sys, "argv", ["x", "tt"] + ([] if llm is not None else ["--dry-run"]))
     sc.main()
     return capsys.readouterr().out
