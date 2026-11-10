@@ -161,9 +161,9 @@ def _fmt_meta(meta: dict | None) -> str:
 
 def _fmt_dossier(dossier: dict | None) -> str:
     """Formats backend/meta_screen.py's technical_dossier() into the 【技術操作訊號】 block —
-    real multi-timeframe numbers (日/週/季/動能), nothing narrative. User-requested addition:
-    daily/weekly/quarterly trend + moving averages + trendline + momentum indicator, feeding a
-    step-by-step 買進/賣出/續抱 signal in the LLM's trade_signal output field."""
+    real multi-timeframe numbers (日/週/季/動能), nothing narrative. It holds
+    daily/weekly/quarterly trend + moving averages + trendline + momentum indicator, feeding the
+    step-by-step technical read in the LLM's trade_signal output field."""
     if dossier is None:
         return "資料不足（這檔快取的歷史K棒還不到210個交易日，無法算完整技術指標）"
     d, w, q, m = dossier["daily"], dossier["weekly"], dossier["quarterly"], dossier["momentum"]
@@ -175,7 +175,7 @@ def _fmt_dossier(dossier: dict | None) -> str:
         f"均線/趨勢線/水平位細節：{d.get('detail')}；"
         f"異常拉回：{'有 - ' + '; '.join(d.get('flags', [])[:3]) if d.get('abnormal') else '無'}",
         f"【週線】MA10週={w.get('ma10w')}, MA40週={w.get('ma40w')}, 排列={w.get('trend')}, "
-        f"近期是否剛出現10週穿越40週黃金交叉={w.get('golden_cross_recent')}（經典的熊市見底信號之一）",
+        f"近期是否剛出現10週穿越40週黃金交叉={w.get('golden_cross_recent')}（常被當作熊市見底的參考訊號之一，並非保證）",
         f"【季線】63MA(約一季)={q.get('ma63')}（63MA≈季線）",
         f"【動能指標】近5日漲跌{m.get('ret_5d_pct')}%、近20日漲跌{m.get('ret_20d_pct')}%；RSI(14)={m.get('rsi14')}（標準指標，非四關條件，供輔助參考——"
         f"通常>70視為超買、<30視為超賣，但這不是四關篩選的條件，不可當成關卡條件引用）",
@@ -369,8 +369,14 @@ def run_llm(prompt: str, engine: str) -> str:
     return result.stdout
 
 
-def generate(ticker: str, engine: str):
+def generate(ticker: str, engine: str, run_id: str | None = None):
     today = date.today().isoformat()
+    generated_at = snapshots.utc_stamp()
+    # price and market_date from ONE read of the cache, taken before the (minutes-long) LLM call, so a
+    # concurrent price refresh can't pair yesterday's price with today's date
+    ohlcv = dp.ohlcv_lists(ticker)
+    market_date = ohlcv[5][-1] if ohlcv else None
+    price = ohlcv[3][-1] if ohlcv else None
     meta = meta_screen.meta_gate(ticker)
     dossier = meta_screen.technical_dossier(ticker)
     health = market_health.market_health(ticker)
@@ -381,7 +387,7 @@ def generate(ticker: str, engine: str):
     facts = {
         "today": today,
         "name": name,
-        "price": dp.quote(ticker).get("price"),
+        "price": round(price, 2) if price is not None else None,
         "pct_from_high": dp.quote(ticker).get("pct_from_high"),
         "trend": dp.trend_sigma(ticker),
         "fundamentals": fund,
@@ -406,10 +412,8 @@ def generate(ticker: str, engine: str):
     data["profile"] = Path(profile()["dir"]).name
     data["ticker"] = ticker
     data["as_of"] = today
-    generated_at = snapshots.utc_stamp()
-    ohlcv = dp.ohlcv_lists(ticker)
-    market_date = ohlcv[5][-1] if ohlcv else None  # last trading day in the data, not the machine's date
     data["generated_at"] = generated_at
+    data["run_id"] = run_id
     data["market_date"] = market_date
     data["schema_version"] = snapshots.SCHEMA_VERSION
     # technical + market are deterministic — scores AND reasons come straight from the same rule tiers,
@@ -427,7 +431,7 @@ def generate(ticker: str, engine: str):
     data["macro"] = macro
     write_text_atomic(ANALYSIS_DIR / f"{ticker}.json", json.dumps(data, ensure_ascii=False, indent=2))
     snapshots.save_snapshot(snapshots.snapshot_of(data, generated_at=generated_at, market_date=market_date, engine=engine,
-                                                price=facts["price"], profile=data["profile"]))
+                                                price=facts["price"], profile=data["profile"], run_id=run_id))
     print(f"[{ticker}] saved -> data/analysis/{ticker}.json (scores={data['scores']})")
 
 
@@ -440,29 +444,32 @@ if __name__ == "__main__":
     print(f"using engine: {engine}")
     tickers = sys.argv[1:] or json.loads((DATA_DIR / "tickers.json").read_text())
 
+    run_id = snapshots.utc_stamp()
+
     def run_one(t: str):
+        """-> (ticker, error or None, skipped). Skipped = another process owns this ticker's lock."""
         if not dp.is_valid_ticker(t):
-            return t, "invalid ticker"
+            return t, "invalid ticker", False
         # one generate per ticker at a time: "add ticker" and "refresh all" can both launch this script
         with try_lock(DATA_DIR / ".locks" / f"{t}.lock") as got:
             if not got:
                 print(f"[{t}] skipped: another analysis for this ticker is already running")
-                return t, None
+                return t, None, True
             try:
-                generate(t, engine)
-                return t, None
+                generate(t, engine, run_id)
+                return t, None, False
             except Exception as e:
-                return t, str(e)
+                return t, str(e), False
 
     # ~100s per ticker with the news/world-context prompt, 21 tickers one-by-one outran the web
     # button's timeout — the model calls are independent, so run a few at a time
     workers = max(1, int(os.environ.get("ANALYSIS_WORKERS", "3")))
     with ThreadPoolExecutor(max_workers=workers) as pool:
         results = list(pool.map(run_one, tickers))
-    failures = [t for t, err in results if err]
-    if not sys.argv[1:]:  # a full-watchlist run: record who was in the universe and who made it
-        snapshots.save_run(snapshots.utc_stamp(), tickers, [t for t, e in results if not e], failures)
-    for t, err in results:
+    failures = [t for t, err, _ in results if err]
+    snapshots.save_run(run_id, tickers, [t for t, e, s in results if not e and not s], failures,
+                       [t for t, _, s in results if s], explicit=bool(sys.argv[1:]))
+    for t, err, _ in results:
         if err:
             print(f"[{t}] FAILED: {err}")
     if failures:

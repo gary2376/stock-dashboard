@@ -32,6 +32,23 @@ def write_text_atomic(path: Path, text: str) -> None:
         raise
 
 
+def write_text_exclusive(path: Path, text: str) -> None:
+    """Like write_text_atomic but refuses to replace: raises FileExistsError if path exists.
+    For history files that must never be overwritten (os.link fails atomically if the name is taken)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.link(tmp, path)
+    finally:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
 @contextmanager
 def try_lock(lock_path: Path):
     """Yields True if this process got the exclusive lock, False if another holds it."""

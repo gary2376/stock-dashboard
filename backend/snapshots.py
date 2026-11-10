@@ -3,7 +3,7 @@ did afterwards. data/analysis/{T}.json is overwritten on every run and can't ans
 
 Layout:
   analysis_history/{T}/{generated_at}.json   one analysis, never modified after writing
-  analysis_history/_runs/{generated_at}.json watchlist + which tickers succeeded/failed
+  analysis_history/_runs/{run_id}.json        requested tickers + which succeeded/failed/skipped
                                               (the evaluation universe can't be rebuilt from today's list)
 Times are UTC; market_date is the last trading day in the price data (the machine's local
 date is not the trading date across Taipei/New York, DST, or an unfinished intraday bar)."""
@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from atomic import write_text_atomic
+from atomic import write_text_exclusive
 from config import DATA_DIR
 
 SCHEMA_VERSION = 1
@@ -24,12 +24,13 @@ def utc_stamp() -> str:
 
 
 def snapshot_of(data: dict, *, generated_at: str, market_date: str | None, engine: str,
-                price: float | None = None, profile: str = "default") -> dict:
+                price: float | None = None, profile: str = "default", run_id: str | None = None) -> dict:
     """Keeps the numbers and short reasons; drops news/macro bodies and the bulky fact blocks."""
     snap = {
         "schema_version": SCHEMA_VERSION,
         "ticker": data.get("ticker"),
         "generated_at": generated_at,
+        "run_id": run_id,
         "market_date": market_date,
         "engine": engine,
         "profile": profile,
@@ -47,12 +48,16 @@ def snapshot_of(data: dict, *, generated_at: str, market_date: str | None, engin
 
 
 def save_snapshot(snap: dict) -> None:
-    write_text_atomic(HISTORY_DIR / snap["ticker"] / f"{snap['generated_at']}.json",
+    write_text_exclusive(HISTORY_DIR / snap["ticker"] / f"{snap['generated_at']}.json",
                       json.dumps(snap, ensure_ascii=False, indent=2))
 
 
-def save_run(generated_at: str, watchlist: list[str], ok: list[str], failed: list[str]) -> None:
-    write_text_atomic(HISTORY_DIR / "_runs" / f"{generated_at}.json", json.dumps({
-        "schema_version": SCHEMA_VERSION, "generated_at": generated_at,
-        "watchlist": watchlist, "ok": ok, "failed": failed,
+def save_run(run_id: str, requested: list[str], ok: list[str], failed: list[str],
+             skipped: list[str], explicit: bool) -> None:
+    """`requested` = the tickers this run was asked to do (whole watchlist, or the explicit CLI args
+    when explicit=True). skipped = another process held the ticker's lock, so no snapshot was made.
+    Each snapshot carries the same run_id."""
+    write_text_exclusive(HISTORY_DIR / "_runs" / f"{run_id}.json", json.dumps({
+        "schema_version": SCHEMA_VERSION, "run_id": run_id, "explicit_tickers": explicit,
+        "requested": requested, "ok": ok, "failed": failed, "skipped": skipped,
     }, ensure_ascii=False, indent=2))
