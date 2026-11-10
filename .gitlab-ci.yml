@@ -1,0 +1,24 @@
+# GitLab CI (the project is moving off GitHub Actions because of its usage limits)
+stages: [test]
+
+.test:
+  stage: test
+  script:
+    - pip install -r backend/requirements.txt pytest httpx
+    - python -m pytest -q tests
+
+test-py39:
+  extends: .test
+  image: python:3.9
+test-py311:
+  extends: .test
+  image: python:3.11
+test-py312:
+  extends: .test
+  image: python:3.12
+
+frontend-syntax:
+  stage: test
+  image: node:20
+  script:
+    - for f in frontend/*.js; do node --check "$f"; done
