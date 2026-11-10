@@ -173,3 +173,7 @@ python scripts/strategy_check.py BBBB --dry-run  # 只看會送出什麼 prompt�
 ## 備份提醒
 
 「匯出備份」涵蓋觀察清單、關注、持倉與最新分析。**不含**：`data/analysis_history/`（分析快照，無法重新產生，請自行複製整個資料夾）、`data/profiles/`（自訂 profile）、聊天紀錄。策略筆記預設不含；匯出時加 `?include_strategy=true` 才會包含（內含你的私人筆記，請妥善保管）。
+
+## 不用等快照的檢驗：技術面回測
+
+`python scripts/backtest_technical.py [--horizon 20]` 用本機 5 年價格快取，在每個歷史時點（只用當時可得資料）重算技術面分數，對照之後 N 日報酬，並扣掉同市場同日其他股票的平均報酬。只能測規則型的技術面；LLM 評分的軸（財報／估值／新聞）無法回測（歷史新聞不在快取，且模型自己的知識會洩漏未來）。結果有重疊窗口、事後挑選的清單、單一多頭行情等限制，腳本會印出來。
