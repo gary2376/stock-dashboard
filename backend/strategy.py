@@ -13,8 +13,10 @@ import os
 import re
 import stat
 import unicodedata
+from bisect import bisect_left
 from collections import Counter
 from dataclasses import dataclass, replace
+from datetime import datetime
 from pathlib import Path
 
 from config import DATA_DIR
@@ -300,6 +302,10 @@ def verify_rows(rows, selected, notes, registry):
         good = [k for k in dict.fromkeys(strs) if k in registry]
         if len(good) != len(refs):
             warns.append(f"{tag}: removed invalid fact_refs {[k for k in refs if not (isinstance(k, str) and k in registry)]}")
+        if status in ("pass", "fail") and registry.get("HOLD.held") == "False" \
+                and any(k.startswith("HOLD.") for k in good):
+            warns.append(f"{tag}: status {status} downgraded to unknown, position rule but HOLD.held is False")
+            status = "unknown"
         if status in ("pass", "fail") and not good:
             warns.append(f"{tag}: status {status} downgraded to unknown, no valid fact_refs")
             status = "unknown"
@@ -360,6 +366,85 @@ def build_registry(*, price, dossier, meta, fund, health) -> dict[str, str]:
     return reg
 
 
+def _valid_date(d) -> bool:
+    try:
+        return isinstance(d, str) and datetime.strptime(d, "%Y-%m-%d").strftime("%Y-%m-%d") == d
+    except ValueError:
+        return False
+
+
+def _num(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def _shares(x):
+    """Shares of a lot if finite and > 0, else None (treated as absent)."""
+    s = x.get("shares")
+    return s if _num(s) and s > 0 else None
+
+
+def clean_lots(raw) -> list:
+    """Lot list from a holdings value (list of lot dicts or a legacy single dict). Lots with a malformed
+    date (must round-trip as YYYY-MM-DD) or price are dropped; sorted by date (stable)."""
+    raw = [raw] if isinstance(raw, dict) else raw if isinstance(raw, list) else []
+    lots = [x for x in raw if isinstance(x, dict) and _valid_date(x.get("date"))
+            and _num(x.get("price")) and x["price"] > 0]
+    return sorted(lots, key=lambda x: x["date"])
+
+
+def _avg(lots) -> float:
+    """Share-weighted mean price when every lot has shares, else the simple mean."""
+    w = [_shares(x) for x in lots]
+    if all(w):
+        return sum(x["price"] * s for x, s in zip(lots, w)) / sum(w)
+    return sum(x["price"] for x in lots) / len(lots)
+
+
+def holding_facts(lots, ohlcv, last_price) -> dict[str, str]:
+    """HOLD.* facts about the position (pure). Keys that cannot be computed are skipped.
+    Only validated lot fields reach the registry."""
+    lots = clean_lots(lots)
+    reg: dict[str, str] = {"HOLD.held": str(bool(lots))}
+    if not lots:
+        return reg
+    r = lambda v: round(v, 2)  # noqa: E731
+    avg = _avg(lots)
+    reg["HOLD.lot_count"] = f"{len(lots)} lots"
+    if all(_shares(x) for x in lots):
+        reg["HOLD.total_shares"] = f"{sum(_shares(x) for x in lots)} shares"
+    reg["HOLD.avg_cost"] = f"{r(avg)} price"
+    reg["HOLD.first_buy_date"], reg["HOLD.last_buy_date"] = lots[0]["date"], lots[-1]["date"]
+    if _num(last_price) and last_price > 0:
+        reg["HOLD.pl_pct"] = f"{r((last_price / avg - 1) * 100)} pct"
+    # a lot bought below the average cost of all earlier lots counts as averaging down
+    n_down = sum(1 for i in range(1, len(lots)) if lots[i]["price"] < _avg(lots[:i]))
+    reg["HOLD.avg_down_count"] = f"{n_down} lots"
+    reg["HOLD.avg_down"] = str(n_down > 0)
+    reg["HOLD.lowest_lot_price"] = f"{r(min(x['price'] for x in lots))} price"
+    reg["HOLD.highest_lot_price"] = f"{r(max(x['price'] for x in lots))} price"
+    if ohlcv:
+        _, hi, lo, _, _, dates = ohlcv
+        pos, wts, first = [], [], None  # per-lot position in the 52w range from bars strictly before the buy
+        for i, x in enumerate(lots):
+            end = bisect_left(dates, x["date"])  # same-day bar may hold post-buy prices: excluded
+            if end < 200:  # lot before the data start, or too little history
+                continue
+            h, l = max(hi[max(0, end - 252):end]), min(lo[max(0, end - 252):end])
+            if h <= l:
+                continue
+            pos.append((x["price"] - l) / (h - l) * 100)
+            wts.append(_shares(x))
+            if i == 0:
+                first = (pos[-1], (x["price"] / h - 1) * 100)
+        if pos:
+            w = wts if all(wts) else [1] * len(pos)
+            reg["HOLD.avg_buy_in_52w_range_pct"] = f"{r(sum(p * k for p, k in zip(pos, w)) / sum(w))} pct"
+        if first:
+            reg["HOLD.first_buy_in_52w_range_pct"] = f"{r(first[0])} pct"
+            reg["HOLD.first_buy_vs_52w_high_pct"] = f"{r(first[1])} pct"
+    return reg
+
+
 def build_prompt(ticker: str, selected: list[Chunk], registry: dict[str, str]) -> str:
     notes = "\n\n".join(f"[{c.id}] {c.file} › {neutralize(c.heading or '(top)')}\n{neutralize(c.text)}" for c in selected)
     facts = "\n".join(f"{k} = {v}" for k, v in registry.items())
@@ -377,6 +462,10 @@ def build_prompt(ticker: str, selected: list[Chunk], registry: dict[str, str]) -
         '- "status": "pass", "fail" or "unknown" (your judgment of the rule against the facts; use '
         '"unknown" only when no registry key applies)\n'
         '- "fact_refs": list of registry keys you relied on, e.g. ["TECH.rsi14"]\n'
+        "HOLD.* keys describe the position in this ticker. Use them for rules about averaging "
+        "down, chasing, position behaviour and entry location. If HOLD.held is False such rules are not "
+        'applicable: set status "unknown" (never pass/fail). Never infer holding behaviour from price '
+        "action alone, only from HOLD.* keys.\n"
         "Do not write evidence text; it is generated from the registry.\n"
     )
 

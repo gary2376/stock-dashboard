@@ -7,6 +7,7 @@ Quotes and fact references are verified by code; pass/fail is the model's judgme
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "backend"))
 sys.path.insert(0, str(ROOT / "scripts"))
 import data_provider as dp  # noqa: E402
+from config import DATA_DIR  # noqa: E402
 import market_health  # noqa: E402
 import meta_screen  # noqa: E402
 import strategy  # noqa: E402
@@ -41,9 +43,33 @@ def main() -> int:
     registry = strategy.build_registry(
         price=ohlcv[3][-1] if ohlcv else None, dossier=dossier, meta=meta,
         fund=dp.fundamentals(ticker), health=market_health.market_health(ticker))
+    lots, omit = [], False  # omit: holdings unreadable/invalid, so say nothing about the position
+    try:
+        raw = json.loads((DATA_DIR / "holdings.json").read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            raise ValueError("top level is not an object")
+        raw = raw.get(ticker)  # missing ticker => genuinely not held
+    except FileNotFoundError:
+        raw = None
+    except (OSError, ValueError):
+        raw, omit = None, True
+    if raw is not None:
+        rawn = len(raw) if isinstance(raw, list) else 1
+        lots = strategy.clean_lots(raw)
+        omit = omit or (rawn > 0 and not lots) or not isinstance(raw, (list, dict))
+        if lots and len(lots) < rawn:
+            print(f"warning: {rawn - len(lots)} of {rawn} lots ignored as malformed")
+    if omit:
+        print("warning: holdings file unreadable/invalid \u2014 position facts omitted")
+    else:
+        registry.update(strategy.holding_facts(lots, ohlcv, ohlcv[3][-1] if ohlcv else None))
+    if lots and not omit:
+        print(f"holdings: {len(lots)} lots included in facts (sent to your logged-in AI CLI)")
     query = " ".join([*registry, *registry.values(), meta_screen.technical_reason(meta, dossier)])
     if registry.get("TECH.stage2") == "False":
         query += " Stage2 趨勢 均線 50日 200日 trend filter"
+    if registry.get("HOLD.avg_down") == "True":
+        query += " 攤平 向下攤平 加碼"
     selected = strategy.rank(query, chunks)
     if not selected:
         print("no relevant notes matched; not calling the model")
