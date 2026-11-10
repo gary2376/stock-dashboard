@@ -27,4 +27,6 @@ if [ -z "${STOCK_DASHBOARD_PROFILE:-}" ] && [ -d "$ROOT/data/profiles/personal" 
   export STOCK_DASHBOARD_PROFILE="$ROOT/data/profiles/personal"
 fi
 cd "$ROOT/backend"
-exec python3 -m uvicorn app:app --reload --host "$IP" --port 8013
+PY=python3
+[ -x "$ROOT/.venv/bin/python3" ] && PY="$ROOT/.venv/bin/python3"  # prefer the project venv when there is one
+exec "$PY" -m uvicorn app:app --reload --host "$IP" --port 8013
