@@ -23,5 +23,8 @@ fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "只監聽 Tailscale IP：$IP:8013"
+if [ -z "${STOCK_DASHBOARD_PROFILE:-}" ] && [ -d "$ROOT/data/profiles/personal" ]; then
+  export STOCK_DASHBOARD_PROFILE="$ROOT/data/profiles/personal"
+fi
 cd "$ROOT/backend"
 exec python3 -m uvicorn app:app --reload --host "$IP" --port 8013

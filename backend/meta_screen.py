@@ -11,6 +11,7 @@ ago slope comparisons — a brand new ticker with no cache warmed yet has no his
 from __future__ import annotations
 
 import data_provider as dp
+from analysis_profile import profile
 
 
 def sma_asof(vals, n, end_idx):
@@ -84,6 +85,7 @@ def trendline_project(swings, last_idx):
 
 
 def analyze_core(t, o, h, l, c, v, dates):
+    TH = profile()["technical"]
     n = len(c)
     if n < 210:
         return None
@@ -151,7 +153,7 @@ def analyze_core(t, o, h, l, c, v, dates):
     for i in range(max(0, n - 30), n):
         if o[i] and c[i] and v[i]:
             chg = (c[i] / o[i] - 1) * 100
-            if chg > 4 and v[i] > v20avg * 1.3:
+            if chg > TH["big_candle_pct"] and v[i] > v20avg * TH["volume_mult"]:
                 big_up_with_vol = True
     v_recent5 = sum(v[-5:]) / 5
     v_prior5 = sum(v[-10:-5]) / 5
@@ -182,7 +184,7 @@ def analyze_core(t, o, h, l, c, v, dates):
         if o[i] and c[i] and v[i]:
             chg = (c[i] / o[i] - 1) * 100
             v20i = sum(v[max(0, i - 20):i]) / max(1, len(v[max(0, i - 20):i])) if i > 0 else v[i]
-            if chg < -4 and v[i] > v20i * 1.3:
+            if chg < -TH["big_candle_pct"] and v[i] > v20i * TH["volume_mult"]:
                 flags.append(f"{dates[i]}:巨量長陰燭({chg:.1f}%,量{v[i] / v20i:.1f}x)")
         if i > 0 and l[i - 1] and h[i] and h[i] < l[i - 1]:
             flags.append(f"{dates[i]}:gapdown")
@@ -200,7 +202,7 @@ def analyze_core(t, o, h, l, c, v, dates):
     hi60 = max(h[-60:])
     reward = (hi60 - price) / price * 100
     rr = reward / risk if risk > 0 else 0
-    tight_stop_ok = risk <= 7.0
+    tight_stop_ok = risk <= TH["stop_max_pct"]
 
     s10_now = sma_asof(closes, 10, n - 1)
     s10_5ago = sma_asof(closes, 10, n - 6)
@@ -210,7 +212,7 @@ def analyze_core(t, o, h, l, c, v, dates):
         "abnormal": abnormal, "flags": flags,
         "slope10": slope10, "risk": risk, "reward": reward, "rr": rr,
         "tight_stop_ok": tight_stop_ok,
-        "final_pass": edge_count >= 3 and not abnormal and tight_stop_ok and rr >= 3.0,
+        "final_pass": edge_count >= 3 and not abnormal and tight_stop_ok and rr >= TH["rr_min"],
         "stop_price": stop, "target_price": hi60,
     })
     return base
@@ -362,19 +364,21 @@ def technical_reason(result: dict | None, dossier: dict | None) -> str:
         return (f"{score}分（Stage2不成立，封頂15分）：{'、'.join(fails) or '均線排列未達標'}。"
                 "趨勢過濾先問「方向」——股價要站上50MA、50MA在200MA之上且兩線同向上，"
                 "這個前提沒過，後面的位置/進場條件就不算。")
+    TH = profile()["technical"]
+    stop_max, rr_min = TH["stop_max_pct"], TH["rr_min"]
     edge = result.get("edge_count", 0)
     hit = [k for k, v in (result.get("categories") or {}).items() if v]
     base = f"Stage2成立，優勢類別命中{edge}/4（{'、'.join(hit) or '無'}）。"
     if result.get("final_pass"):
-        return (f"{score}分：{base}且無異常拉回、停損{result['risk']:.1f}%≤7%、"
-                f"R:R={result['rr']:.2f}:1≥3:1，META四關全過。")
+        return (f"{score}分：{base}且無異常拉回、停損{result['risk']:.1f}%≤{stop_max:g}%、"
+                f"R:R={result['rr']:.2f}:1≥{rr_min:g}:1，META四關全過。")
     if edge < 3:
         return f"{score}分：{base}未達≥3類別的門檻（30分起、每多1類+10分）。"
     why = []
     if result.get("abnormal"):
         why.append("出現異常拉回（" + "；".join(result.get("flags", [])[:2]) + "）")
     if not result.get("tight_stop_ok", True):
-        why.append(f"停損幅度{result['risk']:.1f}%超過7%")
-    if result.get("rr", 0) < 3:
-        why.append(f"R:R僅{result['rr']:.2f}:1，不到3:1")
+        why.append(f"停損幅度{result['risk']:.1f}%超過{stop_max:g}%")
+    if result.get("rr", 0) < rr_min:
+        why.append(f"R:R僅{result['rr']:.2f}:1，不到{rr_min:g}:1")
     return f"{score}分：{base}但{'、'.join(why)}，未過關（異常拉回封頂55分，其餘65分）。"

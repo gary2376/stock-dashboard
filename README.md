@@ -142,3 +142,11 @@ python3 scripts/generate_analysis.py 2330.TW   # 只跑指定代號
 - 兩個更新按鈕觸發的是背景thread，**如果重啟uvicorn，進行中的更新會被中斷**（之後再按一次就好，refresh_prices.py很快，generate_analysis.py可能要重跑比較久）。
 - 這個網頁沒有任何帳密驗證，也沒有多使用者支援，設計上就是給一個人自己用的工具，不要公開部署在沒有存取控制的網路上。
 - 「匯入備份」是整個覆蓋，不是合併——匯入前目前的觀察清單/關注/持倉/分析會被取代，不是跟備份檔內容合併。
+
+## 自訂分析規則（Profile）
+
+`profiles/default/` 是內建設定：`profile.json`（技術面門檻、評分護欄門檻、訊號用語 `signal_style`：`state`＝偏多／偏空／觀望，`action`＝買進／賣出／續抱／觀望）加上選填的 `rules.md`（會附加到分析 prompt 的額外規則）。
+
+要用自己的：複製 `profiles/default/` 到別處，改完以 `STOCK_DASHBOARD_PROFILE=/你的/資料夾` 啟動（`scripts/run_local.sh` 會自動使用 `data/profiles/personal/`，該資料夾不會進 git）。只有 default 裡已存在的欄位、且型別相同的值才會生效，錯誤的值會被忽略並記在分析結果的 `warnings`。
+
+`rules.md` 只能影響模型的措辭與重點；**評分護欄的判斷邏輯寫在程式裡，profile 只能調門檻，不能關掉或繞過**。

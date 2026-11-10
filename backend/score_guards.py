@@ -10,36 +10,40 @@ from __future__ import annotations
 
 import re
 
+from analysis_profile import profile
+
 CYCLICAL_SECTORS = {"Basic Materials", "Energy"}
 
 
 def _caps(fund: dict, dossier: dict | None, pct_from_high: float | None, health: dict) -> dict[str, list[tuple[int, str]]]:
+    G = profile()["guards"]
     caps: dict[str, list[tuple[int, str]]] = {"fundamentals": [], "valuation": [], "market": []}
 
     pm, fcf = fund.get("profit_margins"), fund.get("free_cashflow")
     cash, debt = fund.get("total_cash"), fund.get("total_debt")
     if pm is not None and pm < 0:
-        caps["fundamentals"].append((40, "公司目前虧損（淨利率為負）"))
-        caps["valuation"].append((40, "沒有為正的實際獲利可當估值錨，本益比只剩估計值"))
+        caps["fundamentals"].append((G["loss_cap"], "公司目前虧損（淨利率為負）"))
+        caps["valuation"].append((G["loss_cap"], "沒有為正的實際獲利可當估值錨，本益比只剩估計值"))
     if fcf is not None and fcf < 0:
-        caps["fundamentals"].append((45, "自由現金流為負"))
-    if cash and debt and fcf is not None and debt > 1.5 * cash and fcf < 0.05 * debt:
-        caps["fundamentals"].append((55, "總負債超過現金1.5倍，自由現金流相對負債偏薄"))
+        caps["fundamentals"].append((G["negative_fcf_cap"], "自由現金流為負"))
+    if cash and debt and fcf is not None and debt > G["debt_to_cash_max"] * cash and fcf < G["fcf_to_debt_min"] * debt:
+        caps["fundamentals"].append((G["high_debt_cap"], f"總負債超過現金{G['debt_to_cash_max']:g}倍，自由現金流相對負債偏薄"))
     history = fund.get("earnings_history") or []
-    if history and (history[0].get("surprise_pct") or 0) <= -10:
-        caps["fundamentals"].append((70, f"最近一季EPS低於市場預期{abs(history[0]['surprise_pct']):.1f}%"))
+    if history and (history[0].get("surprise_pct") or 0) <= G["eps_miss_pct"]:
+        caps["fundamentals"].append((G["eps_miss_cap"], f"最近一季EPS低於市場預期{abs(history[0]['surprise_pct']):.1f}%"))
 
     ret_20d = ((dossier or {}).get("momentum") or {}).get("ret_20d_pct")
-    if (ret_20d is not None and ret_20d <= -40) or (pct_from_high is not None and pct_from_high <= -60):
-        caps["valuation"].append((45, "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，"
+    if (ret_20d is not None and ret_20d <= G["crash_ret_20d_pct"]) or (
+            pct_from_high is not None and pct_from_high <= G["crash_from_high_pct"]):
+        caps["valuation"].append((G["crash_cap"], f"價格近期重挫（近20日{G['crash_ret_20d_pct']:g}%以上或距高點{G['crash_from_high_pct']:g}%以上），分析師目標價與預估多半已過時，"
                                        "「便宜」尚未被市場價格驗證，也可能是價值陷阱"))
     industry = (fund.get("industry") or "")
     if fund.get("sector") in CYCLICAL_SECTORS or re.search(r"aluminum|steel|copper|coal|oil|gas|chemical|mining", industry, re.I):
-        caps["valuation"].append((55, "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"))
+        caps["valuation"].append((G["cyclical_cap"], "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"))
 
     sox = (health.get("side_5d") or {}).get("費城半導體指數")
-    if fund.get("sector") == "Technology" and sox is not None and sox <= -8:
-        caps["market"].append((35, f"科技／半導體族群正在崩跌（費城半導體指數近5日{sox:+.1f}%），"
+    if fund.get("sector") == "Technology" and sox is not None and sox <= G["sox_5d_pct"]:
+        caps["market"].append((G["sector_crash_cap"], f"科技／半導體族群正在崩跌（費城半導體指數近5日{sox:+.1f}%），"
                                    "大盤指數的均線是落後指標，看不出族群層級的衝擊"))
     return caps
 

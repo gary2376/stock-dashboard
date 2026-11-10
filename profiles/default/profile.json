@@ -1,0 +1,25 @@
+{
+  "name": "default",
+  "signal_style": "state",
+  "technical": {
+    "stop_max_pct": 7.0,
+    "rr_min": 3.0,
+    "big_candle_pct": 4.0,
+    "volume_mult": 1.3
+  },
+  "guards": {
+    "loss_cap": 40,
+    "negative_fcf_cap": 45,
+    "high_debt_cap": 55,
+    "debt_to_cash_max": 1.5,
+    "fcf_to_debt_min": 0.05,
+    "eps_miss_cap": 70,
+    "eps_miss_pct": -10,
+    "crash_cap": 45,
+    "crash_ret_20d_pct": -40,
+    "crash_from_high_pct": -60,
+    "cyclical_cap": 55,
+    "sector_crash_cap": 35,
+    "sox_5d_pct": -8
+  }
+}
