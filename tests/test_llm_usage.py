@@ -29,7 +29,8 @@ def test_run_llm_claude_logs_usage_and_uses_cheap_flags(tmp_path, monkeypatch):
 
     monkeypatch.setattr(ga.subprocess, "run", fake_run)
     assert ga.run_llm("p", "claude", tag="analysis:AAA") == "answer"
-    assert "--tools" in seen["cmd"] and "--strict-mcp-config" in seen["cmd"] and "--disable-slash-commands" in seen["cmd"]
+    assert seen["cmd"][seen["cmd"].index("--tools") + 1] == ""
+    assert "--strict-mcp-config" in seen["cmd"] and "--disable-slash-commands" in seen["cmd"]
     row = json.loads((tmp_path / "u.jsonl").read_text())
     assert row["tag"] == "analysis:AAA" and row["output_tokens"] == 7 and row["cost_usd"] == 0.02 and row["ok"]
 
@@ -51,3 +52,18 @@ def test_summarize_groups_by_tag_kind():
             {"tag": "strategy:A", "seconds": 5, "cost_usd": 0.05, "output_tokens": 1}]
     s = llm_usage.summarize(rows)
     assert s["analysis"]["calls"] == 2 and s["analysis"]["tokens"] == 1007 and s["strategy"]["calls"] == 1
+
+
+def test_parse_claude_tolerates_noise_and_run_llm_rejects_garbage(tmp_path, monkeypatch):
+    monkeypatch.setattr(llm_usage, "log_file", lambda: tmp_path / "u.jsonl")
+    env = json.dumps({"result": "ans", "usage": {"output_tokens": 3}})
+    noisy = f"warning: something\n{env}\ntrailing note"
+    assert llm_usage.parse_claude(noisy)[0] == "ans"
+    monkeypatch.setattr(ga.subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0, noisy, ""))
+    assert ga.run_llm("p", "claude") == "ans"
+    monkeypatch.setattr(ga.subprocess, "run", lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0, "garbage {x", ""))
+    try:
+        ga.run_llm("p", "claude")
+        assert False
+    except RuntimeError as e:
+        assert "no JSON result" in str(e)

@@ -3,8 +3,17 @@
 - [ ] Old analysis JSON without new fields renders.
 - [ ] First load shows the consent modal; initial focus is on confirm, Tab stays in the dialog, Escape does not dismiss it, confirm closes it, and focus is restored.
 - [ ] Confirming stores consent; subsequent loads do not show the modal. With localStorage blocked, the page still works and the modal appears on each load.
-- [ ] Disclaimer footer and TradingView attribution link appear on index.html, dashboard.html, detail.html, and strategy.html.
+- [ ] Disclaimer footer and TradingView attribution link appear on index.html, dashboard.html, detail.html, strategy.html, and overview.html.
 - [ ] At mobile width, the modal and footer fit without horizontal scrolling.
+- [ ] On the first visit to each of `index.html`, `dashboard.html`, `detail.html`, `strategy.html`, and `overview.html`, the tour waits until the consent dialog is confirmed, then starts once; reloading that page does not auto-start it again.
+- [ ] With localStorage blocked, the tour still works and does not repeatedly auto-start within the same document; the fixed bottom-left `？ 導覽` button can replay it at any time without covering the bottom-right AI bubble or disclaimer text.
+- [ ] Each tour step scrolls its target into view, dims the rest of the page, outlines the target, shows Traditional Chinese WHAT/WHY copy and the correct `n / total`, and supports 上一步、下一步／完成、略過導覽.
+- [ ] Tour keyboard behavior: opening moves focus to 下一步, Tab and Shift+Tab stay inside the dialog, Escape skips/closes, and focus returns to the replay button (or the previously focused element).
+- [ ] Remove or hide optional targets (no watchlist cards, no holdings, no radar scores, no position note); their steps are silently skipped and the remaining tour still completes.
+- [ ] At 390px width, every tour popover stays inside the viewport with no horizontal scroll; with reduced motion enabled, spotlight movement and target scrolling do not animate.
+- [ ] Index tour includes the 策略批次總覽 navigation link. Dashboard tour highlights totals, holdings pie, and P/L bars when holdings exist. Detail tour covers chart/drawing, range, five-axis evidence warning/reasons, holding lots, analysis, strategy-check verification meaning, and optional position note.
+- [ ] Leave the consent dialog open for over 10 seconds or navigate away while it is open; the tour's consent-wait observer times out/disconnects and does not start later from a stale observer.
+- [ ] Strategy tour explains why notes matter, upload, paste, limits, and that notes stay in local `data/strategy` and are sent to the logged-in AI CLI only when running a check.
 - [ ] `strategy.html` shows current byte/file usage and limits, and its empty state is clear when no notes exist.
 - [ ] Upload accepts UTF-8 `.md`/`.txt`, rejects a file over the server-reported single-file/total limits before sending, rejects non-UTF-8 bytes without a PUT, and surfaces backend 400/413 details.
 - [ ] Paste-save preflights UTF-8 byte size against the server-reported single-file and total limits; view, confirmed delete, and refresh work; filenames and note contents containing `<script>`, quotes, and `&` render only as text.
@@ -17,3 +26,14 @@
 - [ ] During polling, transient GET failures show a connection/retry message and retry after about 3s, 6s, then 12s without extending the original 10-minute deadline.
 - [ ] Navigate away/back through BFCache while a check is running; the page becomes active again and resumes/re-fetches status instead of remaining stopped.
 - [ ] Strategy page and detail panel fit at mobile width with no horizontal scrolling; all controls are keyboard reachable and focus-visible.
+- [ ] Index links to `overview.html` next to 策略筆記; the overview page links back to the index and to strategy-note management, and its tour covers ticker selection, run button, matrix, and usage box.
+- [ ] Overview groups `/api/stocks` checkboxes into 台股／美股, enforces a 10-stock maximum, updates the counter, and each quick button checks the first three stocks in its market without exceeding the limit.
+- [ ] Starting a batch shows the exact AI-cost warning and a confirm dialog with the selected count; POST 400 `detail` messages remain visible and restore all controls. On POST 409, the page immediately GETs current batch status: it attaches to a running batch with progress/polling and an「另一個批次已在執行」message, otherwise it shows only the 409 detail and restores controls.
+- [ ] Starting a new batch and every `running` response visibly dims the previous matrix and labels it `以下為上一次批次的結果，新批次完成後會更新`. A terminal response without `overview` replaces the old matrix with a clear no-result/error notice.
+- [ ] Overview loads the last saved batch on entry. While running it shows `done/total · 目前：X`, polls about every 3 seconds, retries transient failures after about 3/6/12 seconds, stops on done/error/navigation or 30 minutes, and resumes after BFCache restore without extending the original deadline.
+- [ ] Delay or hang a batch status GET: each GET aborts on its own timeout, and the independent original 30-minute deadline still stops polling, hides progress, and unlocks controls. A valid server `started_at` defines that deadline; repeated `running` responses, manual loads, and BFCache restore never renew it.
+- [ ] Delay the initial overview batch GET until after a newer POST/poll GET completes; the stale response never overwrites the newer state.
+- [ ] Matrix rows are rules and columns are linked tickers; all four statuses include visible text, rule/file/heading/counts and per-ticker counts render, and ticker/global errors show their message. Unknown or missing response fields do not break rendering.
+- [ ] At 360px the overview page itself has no horizontal scroll: the overview header stacks/wraps, only the matrix/usage wrappers scroll horizontally, the first matrix column stays sticky, and controls remain keyboard reachable and focus-visible.
+- [ ] The always-visible overview disclaimer reads `狀態由模型判斷，引文與事實由程式驗證，不構成投資建議`.
+- [ ] Expanding AI 額度使用紀錄 shows kind calls/tokens/cost plus recent rows; cost is labeled `約 USD（API 等值，訂閱方案不一定實際計費）`, and API strings containing HTML render only as text.

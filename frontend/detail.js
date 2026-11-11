@@ -187,7 +187,7 @@ function shell(s) {
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="trendPanel">
     <h3>趨勢位階 <span class="meter-desc" id="trendRangeNote">（近${RANGE_LABEL[currentRange]}）</span></h3>
     <div class="meter-label-row">
       <span class="tag ${tagClass(s.trend.label)}" id="trendTag">${s.trend.label}　${s.trend.sigma > 0 ? "+" : ""}${s.trend.sigma}σ</span>
@@ -196,12 +196,12 @@ function shell(s) {
     <div class="meter" style="margin-top:8px;"><span class="marker" id="trendMarker" style="left:${sigmaToX(s.trend.sigma)}%"></span></div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="holdingPanel">
     <h3>我的持倉</h3>
     <div id="holdingPanelBody">${holdingPanelHtml(s.holding)}</div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="priceChartPanel">
     <h3>走勢圖與區間位置</h3>
     <div class="chart-range-row" id="rangeBtns"></div>
     <div class="chart-range-row">
@@ -218,7 +218,7 @@ function shell(s) {
     <div class="meter-desc" id="rangeMinMax">低 ${fmtMoney(s.range_position.low)}　高 ${fmtMoney(s.range_position.high)}</div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="fundamentalsPanel">
     <h3>基本面</h3>
     <div class="fund-grid">
       <div class="fund-item"><div class="label">本益比 (TTM)</div><div class="value">${f.trailing_pe ? f.trailing_pe.toFixed(1) : "--"}</div></div>
@@ -245,7 +245,7 @@ function shell(s) {
     </div>
   </section>
 
-  <div class="panel">
+  <div class="panel" id="investmentAnalysisPanel">
     <h3>投資分析${a.ticker ? "" : "（尚未產生，等候Codex背景產生或執行 scripts/generate_analysis.py）"}</h3>
     ${analysisAsOfHtml(a.as_of)}
     <div class="analysis-score-section">
@@ -259,7 +259,7 @@ function shell(s) {
       <div class="analysis-block"><h4>時事與世界局勢影響</h4><p>${escapeHtml(a.world_context) || "--"}</p></div>
       <div class="analysis-block"><h4>反方觀點</h4><p>${escapeHtml(a.bear_case) || "--"}</p></div>
       <div class="analysis-block"><h4>現實檢視</h4><p>${escapeHtml(a.reality_check) || "--"}</p></div>
-      ${a.position_note ? `<div class="analysis-block"><h4>你的持倉與情境（模型說明，不影響分數）</h4><p>${escapeHtml(a.position_note)}</p></div>` : ""}
+      ${a.position_note ? `<div class="analysis-block position-note"><h4>你的持倉與情境（模型說明，不影響分數）</h4><p>${escapeHtml(a.position_note)}</p></div>` : ""}
       <div class="analysis-block"><h4>技術操作訊號（日／週／季／動能）</h4>${tradeSignalHtml(a.trade_signal)}</div>
       <div class="analysis-block"><h4>護城河</h4><p>${escapeHtml(a.moat) || "--"}</p></div>
       <div class="analysis-block"><h4>財務體質</h4><p>${escapeHtml(a.financial_health) || "--"}</p></div>

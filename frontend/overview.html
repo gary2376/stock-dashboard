@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>策略批次總覽 - 選股系統</title>
+<link rel="stylesheet" href="style.css" />
+<script src="disclaimer.js"></script>
+<script src="tour.js"></script>
+</head>
+<body>
+<main class="overview-wrap">
+  <a class="back-link" href="index.html">← 回選股總覽</a>
+  <header class="strategy-header overview-header">
+    <div>
+      <h1>策略批次總覽</h1>
+      <p class="subtitle">一次比較多檔觀察清單股票，快速找出策略規則的差異。</p>
+    </div>
+    <a class="range-btn nav-link" href="strategy.html">管理策略筆記</a>
+  </header>
+
+  <section id="tickerPicker" class="panel overview-picker" aria-labelledby="tickerPickerTitle">
+    <div class="strategy-section-heading overview-section-heading">
+      <div>
+        <h2 id="tickerPickerTitle">選擇股票</h2>
+        <p id="tickerCounter" class="overview-counter" aria-live="polite">已選 0 / 10 檔</p>
+      </div>
+      <div class="overview-quick-actions" aria-label="快速選取">
+        <button id="pickTwBtn" class="range-btn" type="button" disabled>勾選台股前3檔</button>
+        <button id="pickUsBtn" class="range-btn" type="button" disabled>勾選美股前3檔</button>
+      </div>
+    </div>
+    <div id="tickerGroups" class="overview-ticker-groups" aria-busy="true">
+      <p class="empty overview-empty">載入觀察清單中…</p>
+    </div>
+    <p class="overview-cost-notice">每檔約一次 AI 呼叫；會消耗你登入的 claude／codex 額度，批次越多越花額度</p>
+    <div class="overview-run-row">
+      <button id="runBatchBtn" class="action-btn overview-run-btn" type="button" disabled>執行批次檢查</button>
+      <p id="batchStatus" class="strategy-check-status overview-status" role="status" aria-live="polite"></p>
+    </div>
+    <div id="batchProgress" class="overview-progress" hidden>
+      <progress id="batchProgressBar" value="0" max="1" aria-labelledby="batchProgressText"></progress>
+      <span id="batchProgressText">0/0</span>
+    </div>
+  </section>
+
+  <p class="strategy-result-disclaimer overview-disclaimer">狀態由模型判斷，引文與事實由程式驗證，不構成投資建議</p>
+
+  <section id="batchMatrixPanel" class="panel overview-matrix-panel" aria-labelledby="batchMatrixTitle">
+    <div class="strategy-section-heading overview-section-heading">
+      <div>
+        <h2 id="batchMatrixTitle">規則比較矩陣</h2>
+        <p id="batchMeta" class="overview-meta"></p>
+      </div>
+      <button id="refreshBatchBtn" class="range-btn" type="button">重新整理</button>
+    </div>
+    <div id="batchErrors" class="overview-errors" role="alert" hidden></div>
+    <div id="batchMatrix" class="overview-table-scroll" tabindex="0" aria-label="策略批次比較矩陣">
+      <p class="empty overview-empty">正在讀取上次批次結果…</p>
+    </div>
+  </section>
+
+  <details id="usageBox" class="panel overview-usage-box">
+    <summary>AI 額度使用紀錄</summary>
+    <div id="usageContent" class="overview-usage-content">
+      <p class="empty overview-empty">載入使用紀錄中…</p>
+    </div>
+  </details>
+</main>
+<script src="overview.js"></script>
+</body>
+</html>

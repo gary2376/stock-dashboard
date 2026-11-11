@@ -117,7 +117,7 @@ async function load() {
   const totalPlPct = totalCost ? (totalPl / totalCost * 100) : null;
 
   root.innerHTML = `
-    <div class="stat-row">
+    <div class="stat-row" id="holdingTotals">
       <div class="stat-tile"><div class="stat-label">總市值</div><div class="stat-value">${fmtMoney(totalValue)}</div></div>
       <div class="stat-tile"><div class="stat-label">總成本</div><div class="stat-value">${fmtMoney(totalCost)}</div></div>
       <div class="stat-tile"><div class="stat-label">總損益</div><div class="stat-value ${plClass(totalPl)}">${fmtSignedMoney(totalPl)}</div></div>
@@ -125,11 +125,11 @@ async function load() {
     </div>
 
     <div class="chart-row">
-      <div class="panel chart-panel">
+      <div class="panel chart-panel" id="holdingsPiePanel">
         <h3>持倉比重（依市值）</h3>
         ${withShares.length ? '<div class="chart-box"><canvas id="pieChart"></canvas></div>' : '<div class="meter-desc">沒有填股數的持倉，無法算市值比重。到detail頁補上股數即可納入。</div>'}
       </div>
-      <div class="panel chart-panel">
+      <div class="panel chart-panel" id="holdingsPlPanel">
         <h3>各檔損益%</h3>
         <div class="chart-box" style="height:${Math.max(180, holdings.length * 34)}px;"><canvas id="barChart"></canvas></div>
       </div>

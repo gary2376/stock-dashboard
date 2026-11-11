@@ -23,3 +23,5 @@ data/.locks/
 data/profiles/
 data/strategy/
 graft/
+data/strategy_checks/
+data/llm_usage.jsonl

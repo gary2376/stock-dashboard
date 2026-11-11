@@ -399,6 +399,8 @@ def run_llm(prompt: str, engine: str, tag: str = "") -> str:
     llm_usage.record(engine, tag, time.monotonic() - started, usage, ok=result.returncode == 0)
     if result.returncode != 0:
         raise RuntimeError(f"{engine} failed: {result.stderr[-2000:] or result.stdout[-500:]}")
+    if engine == "claude" and llm_usage.parse_envelope(result.stdout) is None:
+        raise RuntimeError("claude returned no JSON result")  # never pass raw CLI output on as model text
     return text
 
 

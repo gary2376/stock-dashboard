@@ -6,6 +6,7 @@
 <title>策略筆記 - 選股系統</title>
 <link rel="stylesheet" href="style.css" />
 <script src="disclaimer.js"></script>
+<script src="tour.js"></script>
 </head>
 <body>
 <main class="strategy-wrap">
@@ -18,7 +19,7 @@
     <div id="strategyUsage" class="strategy-usage" aria-live="polite">載入用量中…</div>
   </header>
 
-  <aside class="strategy-privacy" aria-labelledby="strategyPrivacyTitle">
+  <aside id="strategyPrivacy" class="strategy-privacy" aria-labelledby="strategyPrivacyTitle">
     <h2 id="strategyPrivacyTitle">隱私提醒</h2>
     <p>執行策略檢查時，筆記會傳送至您本人已登入的 Claude／Codex CLI。檔案只儲存在這台機器的 <code>data/strategy</code>，絕對不要提交到版本控制。</p>
   </aside>
@@ -44,7 +45,7 @@
   </section>
 
   <div class="strategy-editor-grid">
-    <section class="panel" aria-labelledby="strategyUploadTitle">
+    <section id="strategyUploadPanel" class="panel" aria-labelledby="strategyUploadTitle">
       <h2 id="strategyUploadTitle">上傳檔案</h2>
       <p class="strategy-help" id="strategyUploadHelp">支援 .md、.txt；單一檔案不得超過 100KB。</p>
       <label class="section-label" for="strategyFileInput">選擇筆記檔案</label>
@@ -52,7 +53,7 @@
       <button id="uploadStrategyBtn" class="action-btn" type="button">上傳筆記</button>
     </section>
 
-    <section class="panel" aria-labelledby="strategyPasteTitle">
+    <section id="strategyPastePanel" class="panel" aria-labelledby="strategyPasteTitle">
       <h2 id="strategyPasteTitle">貼上文字</h2>
       <form id="strategyPasteForm" class="strategy-paste-form">
         <label class="section-label" for="strategyFilename">檔名</label>

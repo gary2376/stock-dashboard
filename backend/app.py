@@ -32,7 +32,9 @@ class NoCacheStaticFiles(StaticFiles):
         return response
 
 import data_provider as dp
+import llm_usage
 import strategy
+import strategy_batch
 import strategy_runner
 from atomic import write_text_atomic
 
@@ -512,7 +514,7 @@ def strategy_delete(name: str):
 _check_lock = threading.Lock()
 CHECK_MAX_SECONDS = 600  # wall-clock cap: a hung check stops blocking new ones after this
 # running: ticker being checked; token/started identify the run; errors: ticker -> text
-_check_state: dict = {"running": None, "token": None, "started": 0.0, "errors": {}}
+_check_state: dict = {"running": None, "token": None, "started": 0.0, "errors": {}, "cap": None, "pending": set()}  # cap: per-run override (batch), None = CHECK_MAX_SECONDS
 CHECK_FAILED = "策略檢查失敗（詳細原因請看伺服器日誌）"
 KNOWN_CHECK_ERRORS = ("no strategy notes", "no relevant notes matched")
 
@@ -526,9 +528,10 @@ def _check_error_text(e: BaseException) -> str:
 
 
 def _running_ticker():
-    """Caller holds _check_lock. A run older than the cap counts as dead."""
-    if _check_state["running"] and time.monotonic() - _check_state["started"] > CHECK_MAX_SECONDS:
-        _check_state["running"] = None
+    """Caller holds _check_lock. A run older than the cap counts as dead and its token is revoked,
+    so the old worker can no longer publish anything."""
+    if _check_state["running"] and time.monotonic() - _check_state["started"] > (CHECK_MAX_SECONDS if _check_state.get("cap") is None else _check_state["cap"]):
+        _check_state.update(running=None, token=None, pending=set())
     return _check_state["running"]
 
 
@@ -564,7 +567,7 @@ def strategy_check_start(ticker: str):
     with _check_lock:
         if _running_ticker():
             raise HTTPException(409, "已經有一個策略檢查在執行中，稍等一下")
-        _check_state.update(running=ticker, token=token, started=time.monotonic())
+        _check_state.update(running=ticker, token=token, started=time.monotonic(), cap=None)
     try:
         threading.Thread(target=_run_strategy_check, args=(ticker, token), daemon=True).start()
     except BaseException:
@@ -579,13 +582,129 @@ def strategy_check_start(ticker: str):
 def strategy_check_status(ticker: str):
     ticker = _require_valid_ticker(ticker)
     with _check_lock:
-        if _running_ticker() == ticker:
+        run = _running_ticker()
+        if run == ticker or (run == BATCH_RUNNING and ticker in _check_state["pending"]):
             return {"status": "running"}
         err = _check_state["errors"].get(ticker)
     if err:
         return {"status": "error", "error": err}
     result = strategy_runner.load_result(ticker)
     return {"status": "done", "result": result} if result is not None else {"status": "none"}
+
+BATCH_RUNNING = "*batch*"  # _check_state["running"] marker: a batch holds the single global check slot
+BATCH_MAX_SECONDS = 3600
+BATCH_FILE_NAME = "_batch.json"
+_batch_state: dict = {"status": None, "token": None, "progress": None, "overview": None, "errors": None,
+                      "started_at": None, "finished_at": None}
+
+
+def _batch_file() -> Path:
+    return DATA_DIR / "strategy_checks" / BATCH_FILE_NAME
+
+
+def _batch_public() -> dict:
+    """Caller holds _check_lock."""
+    return {k: v for k, v in _batch_state.items() if k != "token" and v is not None}
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _finish_batch(**final) -> None:
+    """Caller holds _check_lock. Record a terminal state in memory and on disk."""
+    _batch_state.update(final, finished_at=_now())
+    try:
+        write_text_atomic(_batch_file(), json.dumps(_batch_public(), ensure_ascii=False))
+    except OSError:
+        logger.error("saving batch result failed", exc_info=True)
+
+
+def _run_strategy_batch(tickers: list, token) -> None:
+    def run_one(t):
+        result = strategy_runner.run_check(t, notes_dir=STRATEGY_DIR)
+        with _check_lock:  # liveness check and publish under one hold
+            if _check_state["token"] is token:
+                strategy_runner.save_result(t, result)
+                _check_state["pending"].discard(t)
+        return result
+
+    def progress(done, total, current):
+        with _check_lock:
+            if _check_state["token"] is not token:
+                return False
+            _check_state["pending"] = set(tickers[done:])
+            _batch_state["progress"] = {"done": done, "total": total, "current": current}
+        return True
+
+    results = errors = None
+    err = None
+    try:
+        results, errors = strategy_batch.run_batch(tickers, run_one, progress, _check_error_text)
+    except BaseException as e:  # noqa: BLE001 — the state must always be released
+        err = _check_error_text(e)
+    finally:
+        with _check_lock:
+            if _check_state["token"] is token:  # a stale/revoked run publishes nothing
+                _check_state.update(running=None, pending=set())
+                if err is None and len(results) == len(tickers):
+                    _finish_batch(status="done", overview=strategy_batch.build_overview(results, errors), errors=errors)
+                else:
+                    _finish_batch(status="error", errors={"*": err or CHECK_FAILED})
+
+
+class BatchBody(BaseModel):
+    tickers: list[str]
+
+
+@app.post("/api/strategy/batch")
+def strategy_batch_start(body: BatchBody):
+    try:
+        tickers = strategy_batch.normalize_tickers(body.tickers, _tickers())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    if not any(strategy.chunk(n) for n in strategy.load_notes(_strategy_root())[0]):
+        raise HTTPException(400, "no strategy notes")
+    token = object()
+    with _check_lock:
+        if _running_ticker():
+            raise HTTPException(409, "已經有一個策略檢查在執行中，稍等一下")
+        _check_state.update(running=BATCH_RUNNING, token=token, started=time.monotonic(),
+                            cap=min(CHECK_MAX_SECONDS * len(tickers), BATCH_MAX_SECONDS), pending=set(tickers))
+        _batch_file().unlink(missing_ok=True)  # a restart must not resurrect the previous batch as current
+        _batch_state.update(status="running", token=token, overview=None, errors=None, finished_at=None,
+                            progress={"done": 0, "total": len(tickers), "current": tickers[0]},
+                            started_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    try:
+        threading.Thread(target=_run_strategy_batch, args=(tickers, token), daemon=True).start()
+    except BaseException:
+        with _check_lock:
+            if _check_state["token"] is token:
+                _check_state.update(running=None, pending=set())
+                _batch_state["status"] = None
+        raise
+    return {"status": "started", "total": len(tickers)}
+
+
+@app.get("/api/strategy/batch")
+def strategy_batch_status():
+    with _check_lock:
+        if _batch_state["status"] == "running" and _running_ticker() != BATCH_RUNNING:
+            _finish_batch(status="error", errors={"*": "批次逾時"})  # capped: counts as dead
+        if _batch_state["status"]:
+            return _batch_public()
+    try:
+        data = json.loads(_batch_file().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"status": "none"}
+    return data if isinstance(data, dict) else {"status": "none"}
+
+
+@app.get("/api/llm-usage")
+def llm_usage_summary():
+    """Numbers only (no prompts): per-kind totals plus the last 20 raw log rows."""
+    rows = llm_usage.recent_rows()
+    return {"summary": llm_usage.summarize(rows), "recent": rows[-20:]}
 
 
 def _backup_payload(include_strategy: bool = False, extra_analysis_tickers=()) -> dict:
