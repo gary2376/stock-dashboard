@@ -112,7 +112,7 @@ def run_check(ticker: str, engine=None, notes_dir=None) -> dict:
     """Raises ValueError('no strategy notes' / 'no relevant notes matched'); LLM/engine errors propagate."""
     prep = prepare(ticker, notes_dir)
     engine = engine or ga.pick_engine(prefer="claude")
-    proposed = strategy.parse_rows(ga.run_llm(prep.prompt, engine))
+    proposed = strategy.parse_rows(ga.run_llm(prep.prompt, engine, tag=f"strategy:{ticker}"))
     rows, vwarn = strategy.verify_rows(proposed, prep.selected, prep.notes, prep.registry)
     heading = {c.id: c.heading for c in prep.selected}
     for r in rows:

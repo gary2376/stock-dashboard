@@ -24,7 +24,7 @@ def env(tmp_path, monkeypatch):
 
 def llm(monkeypatch, rows):
     seen = {}
-    monkeypatch.setattr(runner.ga, "run_llm", lambda prompt, engine: seen.update(p=prompt, e=engine) or json.dumps(rows))
+    monkeypatch.setattr(runner.ga, "run_llm", lambda prompt, engine, tag="": seen.update(p=prompt, e=engine) or json.dumps(rows))
     return seen
 
 

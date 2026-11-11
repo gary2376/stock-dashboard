@@ -22,7 +22,7 @@ def run(tmp_path, monkeypatch, capsys, content, llm=None):
     monkeypatch.setattr(sc.runner.meta_screen, "technical_reason", lambda m, d: "")
     monkeypatch.setattr(sc.runner.market_health, "market_health", lambda t: {})
     if llm is not None:
-        monkeypatch.setattr(sc.runner.ga, "run_llm", lambda prompt, engine: llm)
+        monkeypatch.setattr(sc.runner.ga, "run_llm", lambda prompt, engine, tag="": llm)
         monkeypatch.setattr(sc.runner.ga, "pick_engine", lambda prefer=None: "claude")
     monkeypatch.setattr(sys, "argv", ["x", "tt"] + ([] if llm is not None else ["--dry-run"]))
     sc.main()

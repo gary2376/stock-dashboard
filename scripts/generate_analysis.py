@@ -40,6 +40,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
@@ -52,6 +53,7 @@ import market_health  # noqa: E402
 import news_feed  # noqa: E402
 import score_guards  # noqa: E402
 from analysis_profile import profile  # noqa: E402
+import llm_usage  # noqa: E402
 import snapshots  # noqa: E402
 import strategy  # noqa: E402
 from atomic import try_lock, write_text_atomic  # noqa: E402
@@ -369,7 +371,7 @@ def pick_engine(prefer: str | None = None) -> str:
     )
 
 
-def run_llm(prompt: str, engine: str) -> str:
+def run_llm(prompt: str, engine: str, tag: str = "") -> str:
     # this call only ever needs to turn a text prompt into a text answer — no file edits, no
     # shell commands, no further web/news lookups of its own (the news block above is already
     # the real, dated fetch; letting the model additionally browse would reopen the exact
@@ -377,17 +379,27 @@ def run_llm(prompt: str, engine: str) -> str:
     if engine == "codex":
         cmd = ["codex", "exec", "--skip-git-repo-check", "--sandbox", "read-only", prompt]
     elif engine == "claude":
-        cmd = ["claude", "-p", prompt, "--output-format", "text",
-               "--disallowedTools", "Bash", "Edit", "Write", "WebFetch", "WebSearch", "Read", "Glob", "Grep", "Task"]
+        # --tools "" = no tools at all; the other flags stop the CLI from loading the user's global
+        # skills / plugins / MCP servers, which otherwise add ~60k input tokens to every call
+        cmd = ["claude", "-p", prompt, "--output-format", "json", "--tools", "",
+               "--strict-mcp-config", "--disable-slash-commands", "--setting-sources", "project"]
     else:
         raise ValueError(f"unknown engine: {engine}")
     # empty temp cwd: the CLI doesn't load this repo's files/instructions. NOT a security boundary
     # (codex's read-only sandbox can still read the whole filesystem) — see README.
+    started = time.monotonic()
     with tempfile.TemporaryDirectory() as cwd:
-        result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=180)
+        try:
+            result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=180)
+        except subprocess.TimeoutExpired:
+            llm_usage.record(engine, tag, time.monotonic() - started, {}, ok=False)
+            raise
+    text, usage = (llm_usage.parse_claude(result.stdout) if engine == "claude"
+                   else (result.stdout, llm_usage.parse_codex(result.stderr)))
+    llm_usage.record(engine, tag, time.monotonic() - started, usage, ok=result.returncode == 0)
     if result.returncode != 0:
-        raise RuntimeError(f"{engine} failed: {result.stderr[-2000:]}")
-    return result.stdout
+        raise RuntimeError(f"{engine} failed: {result.stderr[-2000:] or result.stdout[-500:]}")
+    return text
 
 
 def generate(ticker: str, engine: str, run_id: str | None = None):
@@ -421,13 +433,13 @@ def generate(ticker: str, engine: str, run_id: str | None = None):
     }
     prompt = build_prompt(ticker, facts)
     print(f"[{ticker}] calling {engine}...")
-    out = run_llm(prompt, engine)
+    out = run_llm(prompt, engine, tag=f"analysis:{ticker}")
     data = extract_json(out)
     bad = unsupported_entities(data, prompt)
     if bad:  # one corrective retry; if it persists, keep the result but record it
         print(f"[{ticker}] unsupported names {bad} — retrying once")
         out = run_llm(prompt + f"\n\n注意：你上一版輸出提到了資料區塊裡沒有出現的地名／市場名稱：{bad}。"
-                      "請把它們移除（或改成區塊內實際出現的名稱），並重新輸出完整JSON。", engine)
+                      "請把它們移除（或改成區塊內實際出現的名稱），並重新輸出完整JSON。", engine, tag=f"analysis:{ticker}")
         data = extract_json(out)
         bad = unsupported_entities(data, prompt)
     data["position_note"] = strategy._clean_text(data.get("position_note"))[:600]  # optional, plain text, never affects scores

@@ -913,7 +913,7 @@ def chat(body: ChatIn):
             f"paragraph — not an essay. The user's new message:\n{message}"
         )
         try:
-            reply = ga.run_llm(prompt, engine)
+            reply = ga.run_llm(prompt, engine, tag="chat")
         except Exception as e:
             raise HTTPException(502, f"LLM呼叫失敗：{e}")
         reply = reply.strip()

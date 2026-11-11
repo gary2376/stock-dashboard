@@ -116,7 +116,7 @@ def test_chat_drops_old_turns_to_fit_budget(client, monkeypatch):
     c, d = client
     seen = {}
     monkeypatch.setattr(appmod.ga, "pick_engine", lambda prefer=None: "claude")
-    monkeypatch.setattr(appmod.ga, "run_llm", lambda prompt, engine: seen.setdefault("p", prompt) and "ok")
+    monkeypatch.setattr(appmod.ga, "run_llm", lambda prompt, engine, tag="": seen.setdefault("p", prompt) and "ok")
     monkeypatch.setattr(appmod, "CHAT_MAX_PROMPT_CHARS", 3000)
     monkeypatch.setattr(appmod, "CHAT_PROMPT_OVERHEAD", 1500)
     hist = [{"role": "user", "text": f"turn{i} " + "x" * 800, "ts": "t"} for i in range(8)]
