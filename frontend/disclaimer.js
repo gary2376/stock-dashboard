@@ -36,8 +36,7 @@
 
   function showConsentDialog() {
     const previouslyFocused = document.activeElement;
-    const overlay = element("div", "consent-overlay");
-    const dialog = element("section", "consent-dialog");
+    const dialog = element("dialog", "consent-dialog");
     const title = element("h2", "consent-dialog-title", "使用前確認");
     const message = element(
       "p",
@@ -47,15 +46,15 @@
     const confirmButton = element("button", "consent-confirm-btn", "我已了解並同意");
 
     title.id = "consentDialogTitle";
-    dialog.setAttribute("role", "dialog");
-    dialog.setAttribute("aria-modal", "true");
     dialog.setAttribute("aria-labelledby", title.id);
     confirmButton.type = "button";
+    confirmButton.autofocus = true;
 
     dialog.append(title, message, confirmButton);
-    overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
+    document.body.appendChild(dialog);
     document.body.classList.add("consent-modal-open");
+
+    const supportsModalDialog = typeof dialog.showModal === "function";
 
     function keepFocusInDialog(event) {
       if (!dialog.contains(event.target)) confirmButton.focus();
@@ -64,7 +63,7 @@
     function handleKeydown(event) {
       if (event.key === "Escape") {
         event.preventDefault();
-        event.stopImmediatePropagation(); // capture phase on document: runs before any page handler
+        event.stopImmediatePropagation();
         return;
       }
       if (event.key !== "Tab") return;
@@ -73,13 +72,21 @@
       confirmButton.focus();
     }
 
-    function closeDialog() {
+    function cleanup() {
       document.removeEventListener("focusin", keepFocusInDialog);
       document.removeEventListener("keydown", handleKeydown, true);
       document.body.classList.remove("consent-modal-open");
-      overlay.remove();
+      dialog.remove();
       if (previouslyFocused && previouslyFocused.isConnected && typeof previouslyFocused.focus === "function") {
         previouslyFocused.focus();
+      }
+    }
+
+    function closeDialog() {
+      if (supportsModalDialog) dialog.close();
+      else {
+        dialog.removeAttribute("open");
+        cleanup();
       }
     }
 
@@ -91,8 +98,26 @@
       }
       closeDialog();
     });
-    document.addEventListener("keydown", handleKeydown, true);
-    document.addEventListener("focusin", keepFocusInDialog);
+    dialog.addEventListener("cancel", event => event.preventDefault());
+    dialog.addEventListener("close", cleanup, { once: true });
+
+    if (supportsModalDialog) {
+      dialog.showModal();
+      // one focusable control: keep Tab/Shift+Tab on it instead of leaving the page for the browser UI
+      dialog.addEventListener("keydown", event => {
+        if (event.key === "Tab") {
+          event.preventDefault();
+          confirmButton.focus();
+        }
+      });
+    } else {
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.classList.add("consent-dialog-fallback");
+      dialog.setAttribute("open", "");
+      document.addEventListener("keydown", handleKeydown, true);
+      document.addEventListener("focusin", keepFocusInDialog);
+    }
     confirmButton.focus();
   }
 

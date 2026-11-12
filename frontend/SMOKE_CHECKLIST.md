@@ -1,10 +1,11 @@
 # Manual smoke checklist
 
 - [ ] Old analysis JSON without new fields renders.
-- [ ] First load shows the consent modal; initial focus is on confirm, Tab stays in the dialog, Escape does not dismiss it, confirm closes it, and focus is restored.
+- [ ] First load shows a native consent `<dialog>` in the top layer above the chat bubble; initial focus is on confirm, Tab stays in the dialog, Escape and backdrop clicks do not dismiss it, confirm closes it, body scrolling is restored, and focus returns to the previously focused connected element.
 - [ ] Confirming stores consent; subsequent loads do not show the modal. With localStorage blocked, the page still works and the modal appears on each load.
 - [ ] Disclaimer footer and TradingView attribution link appear on index.html, dashboard.html, detail.html, strategy.html, and overview.html.
 - [ ] At mobile width, the modal and footer fit without horizontal scrolling.
+- [ ] In a browser without `showModal()`, the consent fallback still opens, traps focus on confirm, blocks Escape dismissal, confirms normally, and restores focus.
 - [ ] On the first visit to each of `index.html`, `dashboard.html`, `detail.html`, `strategy.html`, and `overview.html`, the tour waits until the consent dialog is confirmed, then starts once; reloading that page does not auto-start it again.
 - [ ] With localStorage blocked, the tour still works and does not repeatedly auto-start within the same document; the fixed bottom-left `？ 導覽` button can replay it at any time without covering the bottom-right AI bubble or disclaimer text.
 - [ ] Each tour step scrolls its target into view, dims the rest of the page, outlines the target, shows Traditional Chinese WHAT/WHY copy and the correct `n / total`, and supports 上一步、下一步／完成、略過導覽.

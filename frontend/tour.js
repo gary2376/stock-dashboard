@@ -246,14 +246,14 @@
     button.type = "button";
     button.setAttribute("aria-label", "重新播放本頁導覽");
     button.addEventListener("click", () => {
-      if (document.querySelector(".consent-overlay")) return;
+      if (document.querySelector("dialog.consent-dialog[open]")) return;
       startTour(path, button);
     });
     document.body.appendChild(button);
   }
 
   function startTour(path, trigger) {
-    if (activeTour || document.querySelector(".consent-overlay")) return;
+    if (activeTour || document.querySelector("dialog.consent-dialog[open]")) return;
     const config = PAGE_TOURS[path];
     if (!config) return;
 
@@ -451,7 +451,7 @@
 
   function autoStartAfterConsent(path) {
     const attempt = () => {
-      if (document.querySelector(".consent-overlay")) return false;
+      if (document.querySelector("dialog.consent-dialog[open]")) return false;
       if (window.__sdTourAutoAttempted?.[path]) return true;
       window.__sdTourAutoAttempted = window.__sdTourAutoAttempted || {};
       window.__sdTourAutoAttempted[path] = true;
