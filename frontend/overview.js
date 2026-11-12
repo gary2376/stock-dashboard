@@ -201,6 +201,38 @@
     return textNode("span", `strategy-status-badge status-${normalized}`, statusLabel(normalized));
   }
 
+  function statusFromValue(value) {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object") return value.status || value.state;
+    return "unknown";
+  }
+
+  function pinStatusForTicker(pin, tickerResult) {
+    const pinId = String(pin.id ?? pin.pin_id ?? pin.key ?? "");
+    const ticker = String(tickerResult.ticker || "");
+    const tickerMaps = [tickerResult.pins, tickerResult.pin_results];
+    for (const map of tickerMaps) {
+      if (map && typeof map === "object" && !Array.isArray(map) && pinId && map[pinId] !== undefined) {
+        return statusFromValue(map[pinId]);
+      }
+      if (Array.isArray(map)) {
+        const match = map.find(item => item && typeof item === "object" && String(item.pin_id ?? item.id ?? item.key ?? "") === pinId);
+        if (match) return statusFromValue(match);
+      }
+    }
+    const pinMaps = [pin.results, pin.rows, pin.statuses, pin.by_ticker];
+    for (const map of pinMaps) {
+      if (map && typeof map === "object" && !Array.isArray(map) && map[ticker] !== undefined) {
+        return statusFromValue(map[ticker]);
+      }
+      if (Array.isArray(map)) {
+        const match = map.find(item => item && typeof item === "object" && String(item.ticker || "") === ticker);
+        if (match) return statusFromValue(match);
+      }
+    }
+    return "unknown";
+  }
+
   function countText(counts) {
     const safe = counts && typeof counts === "object" ? counts : {};
     return `通過 ${Number(safe.pass) || 0} · 未通過 ${Number(safe.fail) || 0} · 未知 ${Number(safe.unknown) || 0} · 有條件 ${Number(safe.conditional) || 0}`;
@@ -254,6 +286,9 @@
     const rules = Array.isArray(overview.rules)
       ? overview.rules.map(rule => rule && typeof rule === "object" ? rule : {})
       : [];
+    const pins = Array.isArray(overview.pins)
+      ? overview.pins.map(pin => pin && typeof pin === "object" ? pin : {})
+      : [];
     const tickers = Array.isArray(overview.tickers)
       ? overview.tickers.map(ticker => ticker && typeof ticker === "object" ? ticker : {})
       : [];
@@ -261,7 +296,7 @@
     matrixEl.classList.remove("is-stale");
     matrixEl.setAttribute("aria-busy", "false");
     matrixEl.replaceChildren();
-    if (!rules.length && !tickers.length) {
+    if (!pins.length && !rules.length && !tickers.length) {
       matrixEl.appendChild(textNode("p", "empty overview-empty", "尚無批次檢查結果。"));
       return;
     }
@@ -269,7 +304,7 @@
     const table = document.createElement("table");
     table.className = "overview-matrix";
     const caption = document.createElement("caption");
-    caption.textContent = "策略規則與股票檢查狀態比較；矩陣只比較「現在」的規則結果，買入當時的檢查不列入。";
+    caption.textContent = "固定檢查項目與策略筆記規則的股票狀態比較；矩陣只比較「現在」的結果，買入當時的檢查不列入。";
     table.appendChild(caption);
     const head = document.createElement("thead");
     const headerRow = document.createElement("tr");
@@ -283,6 +318,35 @@
     table.appendChild(head);
 
     const body = document.createElement("tbody");
+    pins.forEach((pin, index) => {
+      const row = document.createElement("tr");
+      row.className = "overview-pin-row";
+      const heading = document.createElement("th");
+      heading.scope = "row";
+      heading.className = "overview-rule-column overview-pin-heading";
+      heading.appendChild(textNode("strong", "overview-rule-text", pin.text || pin.rule || `固定規則 ${index + 1}`));
+      heading.appendChild(textNode("span", "overview-rule-source", "固定檢查項目 · 程式直接計算"));
+      row.appendChild(heading);
+      tickers.forEach(tickerResult => {
+        const cell = document.createElement("td");
+        cell.appendChild(makeStatusBadge(pinStatusForTicker(pin, tickerResult)));
+        row.appendChild(cell);
+      });
+      body.appendChild(row);
+    });
+    if (pins.length && rules.length) {
+      const separator = document.createElement("tr");
+      separator.className = "overview-rule-separator";
+      const label = document.createElement("th");
+      label.scope = "row";
+      label.className = "overview-rule-column";
+      label.textContent = "策略筆記規則（AI 判斷）";
+      separator.appendChild(label);
+      const filler = document.createElement("td");
+      filler.colSpan = Math.max(1, tickers.length);
+      separator.appendChild(filler);
+      body.appendChild(separator);
+    }
     rules.forEach((rule, index) => {
       const row = document.createElement("tr");
       const heading = document.createElement("th");

@@ -26,6 +26,41 @@
 
   <p id="strategyStatus" class="status-msg strategy-status" role="status" aria-live="polite"></p>
 
+  <section id="pinnedRulesPanel" class="panel pins-manager" aria-labelledby="pinnedRulesTitle">
+    <div class="strategy-section-heading pins-heading">
+      <div>
+        <h2 id="pinnedRulesTitle">固定檢查項目（釘選規則）</h2>
+        <p class="strategy-help">把可直接用資料判斷的規則固定下來；編譯後請先確認系統的解讀。</p>
+      </div>
+      <span id="pinsUsage" class="strategy-usage" aria-live="polite"></span>
+    </div>
+    <form id="pinCreateForm" class="pin-create-form">
+      <label class="section-label" for="pinText">規則文字</label>
+      <input id="pinText" class="text-input" name="text" type="text" autocomplete="off" required placeholder="例如：現在股價低於 200 日均線" />
+      <label class="section-label" for="pinScope">檢查時間</label>
+      <select id="pinScope" class="text-input" name="scope">
+        <option value="now">現在</option>
+        <option value="entry">買入當時</option>
+        <option value="both">兩者</option>
+      </select>
+      <button class="action-btn" type="submit">新增</button>
+    </form>
+    <div class="pin-examples" aria-label="規則範例">
+      <span>範例：</span>
+      <button class="range-btn pin-example-btn" type="button" data-example="現在股價低於 200 日均線" data-scope="now">現在股價低於 200 日均線</button>
+      <button class="range-btn pin-example-btn" type="button" data-example="本益比低於 20 倍" data-scope="now">本益比低於 20 倍</button>
+      <button class="range-btn pin-example-btn" type="button" data-example="買入時股價高於 50 日均線" data-scope="entry">買入時股價高於 50 日均線</button>
+    </div>
+    <details id="pinCatalogHelp" class="pin-catalog-help">
+      <summary>查看可用事實</summary>
+      <div id="pinCatalog" class="pin-catalog" aria-busy="true">載入中…</div>
+    </details>
+    <p id="pinsStatus" class="strategy-check-status" role="status" aria-live="polite"></p>
+    <div id="pinsList" class="pins-list" aria-busy="true">
+      <p class="empty strategy-empty">載入釘選規則中…</p>
+    </div>
+  </section>
+
   <section class="panel" aria-labelledby="strategyFilesTitle">
     <div class="strategy-section-heading">
       <h2 id="strategyFilesTitle">已儲存筆記</h2>

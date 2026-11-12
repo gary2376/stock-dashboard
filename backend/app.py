@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import math
@@ -13,6 +14,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -33,6 +35,7 @@ class NoCacheStaticFiles(StaticFiles):
 
 import data_provider as dp
 import llm_usage
+import pins
 import strategy
 import strategy_batch
 import strategy_runner
@@ -74,6 +77,17 @@ async def limit_body_size(request: Request, call_next):
     if length is not None and (not length.isdigit() or int(length) > MAX_BODY_BYTES):
         return JSONResponse({"detail": "請求內容過大或標頭無效"}, status_code=413)
     return await call_next(request)
+
+@app.middleware("http")
+async def same_origin_writes(request: Request, call_next):
+    """CSRF guard: a state-changing request that carries an Origin must come from this very host.
+    Requests without Origin (curl, scripts, tests) are unaffected."""
+    origin = request.headers.get("origin")
+    if origin is not None and request.method not in ("GET", "HEAD", "OPTIONS"):
+        if urlparse(origin).netloc.lower() != (request.headers.get("host") or "").lower():
+            return JSONResponse({"detail": "來源不符"}, status_code=403)
+    return await call_next(request)
+
 
 # manual "更新股價" / "更新基本面" buttons — both run the same scripts the cron jobs would,
 # just triggered from the UI instead of a schedule. One at a time per kind, background thread
@@ -556,12 +570,16 @@ def _run_strategy_check(ticker: str, token) -> None:
                     _check_state["errors"][ticker] = err
 
 
+def _has_notes_or_pins() -> bool:
+    return bool(pins.enabled_pins()) or any(strategy.chunk(n) for n in strategy.load_notes(_strategy_root())[0])
+
+
 @app.post("/api/strategy/check/{ticker}")
 def strategy_check_start(ticker: str):
     ticker = _require_valid_ticker(ticker)
     if ticker not in _tickers():
         raise HTTPException(404, "ticker not in watchlist")
-    if not any(strategy.chunk(n) for n in strategy.load_notes(_strategy_root())[0]):
+    if not _has_notes_or_pins():
         raise HTTPException(400, "no strategy notes")
     token = object()
     with _check_lock:
@@ -620,9 +638,9 @@ def _finish_batch(**final) -> None:
         logger.error("saving batch result failed", exc_info=True)
 
 
-def _run_strategy_batch(tickers: list, token) -> None:
+def _run_strategy_batch(tickers: list, token, snapshot: list) -> None:
     def run_one(t):
-        result = strategy_runner.run_check(t, notes_dir=STRATEGY_DIR)
+        result = strategy_runner.run_check(t, notes_dir=STRATEGY_DIR, pins_snapshot=snapshot)
         with _check_lock:  # liveness check and publish under one hold
             if _check_state["token"] is token:
                 strategy_runner.save_result(t, result)
@@ -639,6 +657,7 @@ def _run_strategy_batch(tickers: list, token) -> None:
 
     results = errors = None
     err = None
+    pin_cols = [p for p in snapshot if p["scope"] in ("now", "both")]  # columns fixed at batch start
     try:
         results, errors = strategy_batch.run_batch(tickers, run_one, progress, _check_error_text)
     except BaseException as e:  # noqa: BLE001 — the state must always be released
@@ -648,7 +667,7 @@ def _run_strategy_batch(tickers: list, token) -> None:
             if _check_state["token"] is token:  # a stale/revoked run publishes nothing
                 _check_state.update(running=None, pending=set())
                 if err is None and len(results) == len(tickers):
-                    _finish_batch(status="done", overview=strategy_batch.build_overview(results, errors), errors=errors)
+                    _finish_batch(status="done", overview=strategy_batch.build_overview(results, errors, pin_cols), errors=errors)
                 else:
                     _finish_batch(status="error", errors={"*": err or CHECK_FAILED})
 
@@ -663,7 +682,8 @@ def strategy_batch_start(body: BatchBody):
         tickers = strategy_batch.normalize_tickers(body.tickers, _tickers())
     except ValueError as e:
         raise HTTPException(400, str(e))
-    if not any(strategy.chunk(n) for n in strategy.load_notes(_strategy_root())[0]):
+    snapshot = copy.deepcopy(pins.enabled_pins())  # enabled + confirmed, taken once for the whole batch
+    if not snapshot and not any(strategy.chunk(n) for n in strategy.load_notes(_strategy_root())[0]):
         raise HTTPException(400, "no strategy notes")
     token = object()
     with _check_lock:
@@ -676,7 +696,7 @@ def strategy_batch_start(body: BatchBody):
                             progress={"done": 0, "total": len(tickers), "current": tickers[0]},
                             started_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
     try:
-        threading.Thread(target=_run_strategy_batch, args=(tickers, token), daemon=True).start()
+        threading.Thread(target=_run_strategy_batch, args=(tickers, token, snapshot), daemon=True).start()
     except BaseException:
         with _check_lock:
             if _check_state["token"] is token:
@@ -705,6 +725,108 @@ def llm_usage_summary():
     """Numbers only (no prompts): per-kind totals plus the last 20 raw log rows."""
     rows = llm_usage.recent_rows()
     return {"summary": llm_usage.summarize(rows), "recent": rows[-20:]}
+
+
+# ---- pinned rules (data/pins.json): compiled once, then evaluated by code on every run
+
+def _pins_call(fn, *a, **kw):
+    try:
+        return fn(*a, **kw)
+    except pins.PinConflict as e:
+        raise HTTPException(409, str(e))
+    except pins.PinNotFound:
+        raise HTTPException(404, "pin not found")
+    except pins.PinRateLimited as e:
+        raise HTTPException(429, str(e))
+    except pins.PinCompileFailed as e:
+        raise HTTPException(502, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+class PinIn(BaseModel):
+    text: str
+    scope: str = "both"
+    revision: Optional[int] = None
+
+
+class PinPatch(BaseModel):
+    revision: int
+    text: Optional[str] = None
+    enabled: Optional[bool] = None
+    scope: Optional[str] = None
+
+
+class PinRevision(BaseModel):
+    revision: int
+
+
+class PinOrder(BaseModel):
+    order: list[str]
+    revision: int
+
+
+@app.get("/api/pins")
+def pins_list():
+    d = pins.load()
+    return {"revision": d["revision"], "pins": d["pins"],
+            "limits": {"max_pins": pins.MAX_PINS, "max_text": pins.MAX_TEXT}}
+
+
+@app.get("/api/pins/catalog")
+def pins_catalog():
+    return pins.fc.catalog_list()
+
+
+@app.post("/api/pins")
+def pins_create(body: PinIn):
+    pin = _pins_call(pins.create, body.text, body.scope, body.revision)
+    return {"revision": pins.load()["revision"], "pin": pin}
+
+
+@app.post("/api/pins/reorder")
+def pins_reorder(body: PinOrder):
+    _pins_call(pins.reorder, body.order, body.revision)
+    return pins_list()
+
+
+@app.put("/api/pins/{pin_id}")
+def pins_update(pin_id: str, body: PinPatch):
+    pin = _pins_call(pins.update, pin_id, body.revision, body.text, body.enabled, body.scope)
+    return {"revision": pins.load()["revision"], "pin": pin}
+
+
+@app.delete("/api/pins/{pin_id}")
+def pins_delete(pin_id: str, revision: int):
+    _pins_call(pins.delete, pin_id, revision)
+    return {"status": "ok", "revision": pins.load()["revision"]}
+
+
+@app.post("/api/pins/{pin_id}/compile")
+def pins_compile(pin_id: str):
+    """Synchronous; template compiles are instant, an LLM compile can take minutes. One at a time."""
+    pin = _pins_call(pins.compile_and_store, pin_id)
+    return {"revision": pins.load()["revision"], "pin": pin}
+
+
+@app.post("/api/pins/{pin_id}/confirm")
+def pins_confirm(pin_id: str, body: PinRevision):
+    pin = _pins_call(pins.confirm, pin_id, body.revision)
+    return {"revision": pins.load()["revision"], "pin": pin}
+
+
+@app.get("/api/pins/eval/{ticker}")
+def pins_eval(ticker: str):
+    """Instant, no LLM: every enabled pin evaluated by code against the ticker's current facts."""
+    ticker = _require_valid_ticker(ticker)
+    if ticker not in _tickers():
+        raise HTTPException(404, "ticker not in watchlist")
+    allp = pins.load()["pins"]
+    facts = strategy_runner.build_facts(ticker)
+    return {"ticker": ticker, "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "holdings_lots": facts.holdings_lots,
+            "results": pins.evaluate_pins([p for p in allp if p.get("enabled")], facts.registry),
+            "skipped": {"disabled": sum(1 for p in allp if not p.get("enabled"))}}
 
 
 def _backup_payload(include_strategy: bool = False, extra_analysis_tickers=()) -> dict:

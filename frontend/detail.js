@@ -24,6 +24,7 @@ let strategyPageActive = true;
 let strategyStatusGeneration = 0;
 let strategyPollFailureCount = 0;
 let strategyCheckIsRunning = false;
+let pinsEvalGeneration = 0;
 
 const STRATEGY_POLL_INTERVAL_MS = 3000;
 const STRATEGY_POLL_LIMIT_MS = 10 * 60 * 1000;
@@ -264,6 +265,20 @@ function shell(s) {
       <div class="fund-item"><div class="label">市值</div><div class="value">${fmtBig(f.market_cap)}</div></div>
     </div>
   </div>
+
+  <section class="panel pinned-eval-panel" id="pinnedChecksPanel" aria-labelledby="pinnedChecksTitle">
+    <div class="strategy-check-heading">
+      <div>
+        <h3 id="pinnedChecksTitle">固定檢查項目</h3>
+        <p class="strategy-check-intro">由程式直接計算，不經過 AI；規則解讀由你確認過。</p>
+      </div>
+      <button class="range-btn" id="refreshPinnedChecksBtn" type="button">重新整理</button>
+    </div>
+    <p id="pinnedChecksStatus" class="strategy-check-status" role="status" aria-live="polite"></p>
+    <div id="pinnedChecksResult" aria-busy="true">
+      <p class="strategy-result-empty">正在計算固定檢查項目…</p>
+    </div>
+  </section>
 
   <section class="panel strategy-check-panel" id="strategyCheckPanel" aria-labelledby="strategyCheckTitle">
     <div class="strategy-check-heading">
@@ -660,6 +675,129 @@ async function init() {
   renderScoreRadar(full.analysis?.scores);
   applyHoldingMarker();
   wireStrategyCheckPanel();
+  wirePinnedChecksPanel();
+}
+
+// --- pinned checks (deterministic, no LLM) -------------------------------
+
+function pinnedStatus(status) {
+  return ["pass", "fail", "unknown"].includes(status) ? status : "unknown";
+}
+
+function pinnedStatusLabel(status) {
+  return { pass: "通過", fail: "未通過", unknown: "未知" }[pinnedStatus(status)];
+}
+
+function pinnedBadge(status) {
+  const normalized = pinnedStatus(status);
+  return strategyText("span", `strategy-status-badge status-${normalized}`, pinnedStatusLabel(normalized));
+}
+
+function pinnedEvidence(value) {
+  return value === null || value === undefined || value === "" ? "未提供判斷依據" : String(value);
+}
+
+function pinnedOverallStatus(result) {
+  const statuses = [];
+  let missingRequiredSide = false;
+  const scope = ["now", "entry", "both"].includes(result.scope) ? result.scope : "both";
+  const expectsNow = scope === "now" || scope === "both";
+  const expectsEntry = scope === "entry" || scope === "both";
+  if (expectsNow) {
+    if (result.now && typeof result.now === "object") statuses.push(pinnedStatus(result.now.status));
+    else missingRequiredSide = true;
+  }
+  if (expectsEntry) {
+    const entries = Array.isArray(result.entry) ? result.entry.filter(entry => entry && typeof entry === "object") : [];
+    if (!entries.length || result.entry_reason) missingRequiredSide = true;
+    entries.forEach(entry => statuses.push(pinnedStatus(entry.status)));
+  }
+  if (missingRequiredSide) return "unknown";
+  if (statuses.includes("fail")) return "fail";
+  if (!statuses.length || statuses.includes("unknown")) return "unknown";
+  return "pass";
+}
+
+function renderPinnedChecks(data) {
+  const container = document.getElementById("pinnedChecksResult");
+  if (!container) return;
+  container.replaceChildren();
+  container.setAttribute("aria-busy", "false");
+  const results = Array.isArray(data?.results) ? data.results.filter(item => item && typeof item === "object") : [];
+  if (!results.length) {
+    const empty = strategyText("p", "strategy-result-empty", "尚未設定固定檢查項目。");
+    const link = document.createElement("a");
+    link.href = "strategy.html#pinnedRulesPanel";
+    link.textContent = "前往策略筆記新增釘選規則";
+    empty.append(document.createTextNode(" "), link);
+    container.appendChild(empty);
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "strategy-result-list pinned-eval-list";
+  results.forEach((result, index) => {
+    const article = strategyText("article", "strategy-result-row pinned-eval-row", "");
+    const heading = document.createElement("div");
+    heading.className = "strategy-result-row-heading";
+    const overallStatus = pinnedOverallStatus(result);
+    heading.append(pinnedBadge(overallStatus), strategyText("h4", "", result.text || `固定規則 ${index + 1}`));
+    article.appendChild(heading);
+    const now = result.now && typeof result.now === "object" ? result.now : null;
+    if (now) {
+      const line = document.createElement("p");
+      line.className = "pinned-eval-line";
+      line.append(pinnedBadge(now.status), document.createTextNode(` 現在：${pinnedEvidence(now.evidence)}`));
+      article.appendChild(line);
+    }
+    const entries = Array.isArray(result.entry) ? result.entry.filter(item => item && typeof item === "object") : [];
+    entries.forEach((entry, entryIndex) => {
+      const line = document.createElement("p");
+      line.className = "pinned-eval-line";
+      line.append(
+        document.createTextNode(`${entry.lot ?? entryIndex + 1}. ${entry.date || "日期未知"} 買入：`),
+        pinnedBadge(entry.status),
+        document.createTextNode(` ${pinnedEvidence(entry.evidence)}`),
+      );
+      article.appendChild(line);
+    });
+    if (result.entry_reason) {
+      article.appendChild(strategyText("p", "pinned-eval-reason", `買入當時：${String(result.entry_reason)}`));
+    }
+    if (overallStatus === "unknown" && result.reason && result.reason !== result.entry_reason) {
+      article.appendChild(strategyText("p", "pinned-eval-reason", `未知原因：${String(result.reason)}`));
+    }
+    list.appendChild(article);
+  });
+  container.appendChild(list);
+}
+
+async function loadPinnedChecks(options = {}) {
+  const container = document.getElementById("pinnedChecksResult");
+  const status = document.getElementById("pinnedChecksStatus");
+  if (!container || !status) return;
+  const generation = ++pinsEvalGeneration;
+  container.setAttribute("aria-busy", "true");
+  status.textContent = options.holdingsChanged ? "持倉已變更，正在重新計算…" : "";
+  status.classList.remove("error");
+  try {
+    const response = await fetch(`/api/pins/eval/${encodeURIComponent(ticker)}`);
+    if (!response.ok) throw new Error(await strategyResponseDetail(response));
+    const data = await response.json();
+    if (generation !== pinsEvalGeneration) return;
+    renderPinnedChecks(data && typeof data === "object" ? data : {});
+    status.textContent = options.announce || options.holdingsChanged ? "固定檢查項目已更新。" : "";
+  } catch (error) {
+    if (generation !== pinsEvalGeneration) return;
+    container.setAttribute("aria-busy", "false");
+    status.textContent = `固定檢查載入失敗：${error.message}`;
+    status.classList.add("error");
+  }
+}
+
+function wirePinnedChecksPanel() {
+  document.getElementById("refreshPinnedChecksBtn").addEventListener("click", () => loadPinnedChecks({ announce: true }));
+  loadPinnedChecks();
 }
 
 // --- strategy check ------------------------------------------------------
@@ -1112,6 +1250,7 @@ function renderHoldingPanel(holding) {
   document.getElementById("holdingPanelBody").innerHTML = holdingPanelHtml(holding);
   wireHoldingPanel();
   applyHoldingMarker();
+  loadPinnedChecks({ holdingsChanged: true });
 }
 
 function snapToCandleTime(dateStr) {

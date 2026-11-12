@@ -36,7 +36,7 @@ def test_run_check_result_shape(env, monkeypatch):
     seen = llm(monkeypatch, [ROW])
     res = runner.run_check("TT")
     assert set(res) == {"ticker", "generated_at", "engine", "rows", "rows_proposed", "warnings", "notes",
-                        "holdings_lots", "facts", "disclaimer", "entry_lots_checked"}
+                        "holdings_lots", "facts", "disclaimer", "entry_lots_checked", "pins"}
     assert res["ticker"] == "TT" and res["engine"] == "claude" and seen["e"] == "claude"
     assert res["generated_at"].endswith("Z") and res["holdings_lots"] == 0
     assert res["notes"] == [{"name": "n.md", "size": len(f"# Rules\n\n{Q}\n".encode())}]

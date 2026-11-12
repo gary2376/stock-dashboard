@@ -45,8 +45,11 @@ def run_batch(tickers, run_one, on_progress=None, error_text=str):
     return results, errors
 
 
-def build_overview(results: dict, errors: dict = None) -> dict:
+def build_overview(results: dict, errors: dict = None, pins: list = None) -> dict:
+    """pins: enabled pins covering scope now, in saved order; their columns are always present."""
     errors = errors or {}
+    pin_cols = [{"id": p["id"], "text": p["text"], "order": i, "counts": dict.fromkeys(STATUSES[:3], 0)}
+                for i, p in enumerate(pins or [])]
     rules: dict = {}
     tickers = []
     for t, res in results.items():
@@ -68,10 +71,17 @@ def build_overview(results: dict, errors: dict = None) -> dict:
                                           "heading": r.get("heading", ""), "offset": r.get("offset"),
                                           **{f"count_{s}": 0 for s in STATUSES}})
             rule[f"count_{r['status']}"] += 1
-        entry = {"ticker": t, "rows": rows, "counts": counts, "entry_rows_excluded": excluded,
+        pin_status = {}
+        for pr in (res or {}).get("pins", []):
+            now = pr.get("now")
+            col = next((c for c in pin_cols if c["id"] == pr.get("pin_id")), None)
+            if col and now and now.get("status") in col["counts"]:
+                pin_status[col["id"]] = now["status"]
+                col["counts"][now["status"]] += 1
+        entry = {"ticker": t, "pins": pin_status, "rows": rows, "counts": counts, "entry_rows_excluded": excluded,
                  "holdings_lots": (res or {}).get("holdings_lots"), "generated_at": (res or {}).get("generated_at")}
         if t in errors:
             entry["error"] = errors[t]
         tickers.append(entry)
     ordered = sorted(rules.values(), key=lambda r: -r["count_fail"])  # stable: first-seen order breaks ties
-    return {"rules": ordered, "tickers": tickers}
+    return {"rules": ordered, "tickers": tickers, "pins": pin_cols}
