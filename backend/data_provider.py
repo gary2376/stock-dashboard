@@ -357,6 +357,8 @@ def candles(ticker: str, range_key: str) -> list[dict]:
             "high": round(float(row["High"]), 2),
             "low": round(float(row["Low"]), 2),
             "close": round(float(row["Close"]), 2),
+            # older caches may lack volume (or hold NaN): omit rather than send a bogus 0
+            **({"volume": int(row["Volume"])} if "Volume" in df.columns and math.isfinite(float(row["Volume"])) else {}),
         })
     return out
 

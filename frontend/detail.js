@@ -9,6 +9,8 @@ const root = document.getElementById("detailRoot");
 
 let chart, series, chartEl, currentRange = "1y";
 let fullCandles = [];
+let indicatorSeries = {};
+let indicatorData = {};
 let trendLines = [];
 let drawMode = false;
 let pendingPoint = null;
@@ -26,6 +28,30 @@ let strategyCheckIsRunning = false;
 const STRATEGY_POLL_INTERVAL_MS = 3000;
 const STRATEGY_POLL_LIMIT_MS = 10 * 60 * 1000;
 const STRATEGY_DISCLAIMER = "引文與事實引用由程式驗證；通過／未通過與情境建議是模型的判斷，不代表規則已被證明成立，也不構成投資建議。";
+const INDICATOR_STORAGE_KEY = "stock_detail_chart_indicators_v1";
+const INDICATORS = [
+  { key: "ma10", label: "MA10", period: 10, color: "#f2c14e", defaultOn: false },
+  { key: "ma20", label: "MA20", period: 20, color: "#50c9ce", defaultOn: true },
+  { key: "ma50", label: "MA50", period: 50, color: "#b388ff", defaultOn: true },
+  { key: "ma200", label: "MA200", period: 200, color: "#ff8a65", defaultOn: true },
+  { key: "volume", label: "成交量", color: "#9aa0a6", defaultOn: true },
+];
+
+function loadIndicatorState() {
+  const defaults = Object.fromEntries(INDICATORS.map(item => [item.key, item.defaultOn]));
+  try {
+    const saved = JSON.parse(localStorage.getItem(INDICATOR_STORAGE_KEY));
+    if (!saved || typeof saved !== "object") return defaults;
+    INDICATORS.forEach(item => {
+      if (typeof saved[item.key] === "boolean") defaults[item.key] = saved[item.key];
+    });
+  } catch (_) {
+    // Storage can be blocked or contain stale data; defaults keep the chart usable.
+  }
+  return defaults;
+}
+
+let indicatorState = loadIndicatorState();
 
 const SCORE_KEYS = ["technical", "fundamentals", "valuation", "news", "market"];
 const SCORE_LABELS = ["技術面", "財報", "估值", "新聞時事", "市場方向"];
@@ -204,11 +230,20 @@ function shell(s) {
   <div class="panel" id="priceChartPanel">
     <h3>走勢圖與區間位置</h3>
     <div class="chart-range-row" id="rangeBtns"></div>
+    <div class="indicator-toggle-bar" id="indicatorToggles" role="group" aria-label="圖表指標">
+      ${INDICATORS.map(item => `
+        <button class="indicator-toggle ${indicatorState[item.key] ? "active" : ""}" type="button"
+          data-indicator="${item.key}" aria-pressed="${indicatorState[item.key]}" style="--indicator-color:${item.color}">
+          <span class="indicator-swatch" aria-hidden="true"></span>
+          ${item.label}
+        </button>`).join("")}
+    </div>
     <div class="chart-range-row">
       <button class="range-btn" id="drawBtn">✏️ 畫趨勢線</button>
       <button class="range-btn" id="clearDrawBtn">清除畫線</button>
       <span class="meter-desc" id="drawHint"></span>
     </div>
+    <div class="chart-crosshair-legend" id="chartCrosshairLegend" aria-hidden="true"></div>
     <div id="chart"></div>
     <div class="meter-label-row" style="margin-top:14px;">
       <span id="rangeLabel">近${RANGE_LABEL[currentRange]}區間位置</span>
@@ -430,8 +465,97 @@ function wireDrawButtons() {
 
 // --- chart: built once, range switches only pan/zoom the x-axis -----------
 
+function computeMovingAverage(candles, period) {
+  const points = [];
+  let sum = 0;
+  for (let i = 0; i < candles.length; i += 1) {
+    sum += candles[i].close;
+    if (i >= period) sum -= candles[i - period].close;
+    if (i >= period - 1) points.push({ time: candles[i].time, value: sum / period });
+  }
+  return points;
+}
+
+function computeIndicatorData(candles) {
+  const data = {};
+  INDICATORS.filter(item => item.period).forEach(item => {
+    data[item.key] = computeMovingAverage(candles, item.period);
+  });
+  data.volume = candles
+    .filter(candle => Number.isFinite(candle.volume))
+    .map(candle => ({
+      time: candle.time,
+      value: candle.volume,
+      color: candle.close >= candle.open ? "rgba(230, 103, 103, 0.38)" : "rgba(57, 135, 229, 0.38)",
+    }));
+  return data;
+}
+
+function persistIndicatorState() {
+  try {
+    localStorage.setItem(INDICATOR_STORAGE_KEY, JSON.stringify(indicatorState));
+  } catch (_) {
+    // The controls still work for this page view when storage is unavailable.
+  }
+}
+
+function applyIndicatorVisibility(key) {
+  if (indicatorSeries[key]) indicatorSeries[key].applyOptions({ visible: indicatorState[key] });
+  const button = document.querySelector(`[data-indicator="${key}"]`);
+  if (!button) return;
+  button.classList.toggle("active", indicatorState[key]);
+  button.setAttribute("aria-pressed", String(indicatorState[key]));
+}
+
+function wireIndicatorToggles() {
+  document.querySelectorAll("#indicatorToggles [data-indicator]").forEach(button => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.indicator;
+      indicatorState[key] = !indicatorState[key];
+      applyIndicatorVisibility(key);
+      persistIndicatorState();
+    });
+  });
+}
+
+function chartTimeKey(time) {
+  if (typeof time === "string") return time;
+  if (time && typeof time === "object" && "year" in time) {
+    return `${time.year}-${String(time.month).padStart(2, "0")}-${String(time.day).padStart(2, "0")}`;
+  }
+  return "";
+}
+
+function formatCompactVolume(value) {
+  return new Intl.NumberFormat("zh-TW", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+}
+
+function updateCrosshairLegend(param) {
+  const legend = document.getElementById("chartCrosshairLegend");
+  const time = chartTimeKey(param.time);
+  if (!legend || !time || !param.point) {
+    if (legend) {
+      legend.textContent = "";
+      legend.setAttribute("aria-hidden", "true");
+    }
+    return;
+  }
+
+  const parts = [time];
+  INDICATORS.forEach(item => {
+    if (!indicatorState[item.key]) return;
+    const point = param.seriesData.get(indicatorSeries[item.key]);
+    if (!point || !Number.isFinite(point.value)) return;
+    parts.push(`${item.label} ${item.key === "volume" ? formatCompactVolume(point.value) : point.value.toFixed(2)}`);
+  });
+  legend.textContent = parts.join(" · ");
+  legend.setAttribute("aria-hidden", "false");
+}
+
 function renderChart(candles) {
   fullCandles = candles;
+  indicatorData = computeIndicatorData(fullCandles);
+  indicatorSeries = {};
   chartEl = document.getElementById("chart");
   chartEl.innerHTML = "";
   chart = LightweightCharts.createChart(chartEl, {
@@ -446,7 +570,35 @@ function renderChart(candles) {
     wickUpColor: "#e66767", wickDownColor: "#3987e5",
   });
   series.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
+  series.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.22 } });
+
+  INDICATORS.filter(item => item.period).forEach(item => {
+    const line = chart.addLineSeries({
+      color: item.color,
+      lineWidth: 1,
+      lastValueVisible: false,
+      priceLineVisible: false,
+      visible: indicatorState[item.key],
+    });
+    line.setData(indicatorData[item.key]);
+    indicatorSeries[item.key] = line;
+  });
+
+  if (indicatorData.volume.length) {
+    const volume = chart.addHistogramSeries({
+      priceScaleId: "",
+      priceFormat: { type: "volume" },
+      lastValueVisible: false,
+      priceLineVisible: false,
+      visible: indicatorState.volume,
+    });
+    volume.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+    volume.setData(indicatorData.volume);
+    indicatorSeries.volume = volume;
+  }
+
   chart.subscribeClick(handleChartClick);
+  chart.subscribeCrosshairMove(updateCrosshairLegend);
   setChartWindow(currentRange);
 }
 
@@ -500,6 +652,7 @@ async function init() {
   currentHolding = full.holding || null;
   root.innerHTML = shell(full);
   renderRangeButtons();
+  wireIndicatorToggles();
   wireDrawButtons();
   wireStarButton();
   wireHoldingPanel();
@@ -654,9 +807,11 @@ function renderStrategyResult(result) {
   meta.className = "strategy-result-meta";
   appendStrategyMeta(meta, "產生時間", result.generated_at);
   appendStrategyMeta(meta, "引擎", result.engine);
-  const holdingsText = Number.isInteger(result.holdings_lots)
-    ? `已納入 ${result.holdings_lots} 批持倉`
-    : "未納入持倉";
+  const holdingsText = !Number.isInteger(result.holdings_lots)
+    ? "未納入持倉（持倉資料無法讀取）"
+    : result.holdings_lots === 0
+      ? "目前沒有持倉（持倉相關規則會同時列出「如果已持有／如果沒持有」兩種情境）"
+      : `已納入 ${result.holdings_lots} 批持倉`;
   appendStrategyMeta(meta, "持倉", holdingsText);
   container.appendChild(meta);
 
@@ -846,7 +1001,19 @@ function holdingPanelHtml(holding) {
   `;
 }
 
+let holdingPanelRenderedOnce = false;
+
+function markStrategyResultStale() {
+  const container = document.getElementById("strategyCheckResult");
+  if (!container || !container.querySelector(".strategy-result-meta") || container.querySelector(".strategy-stale-notice")) return;
+  const notice = strategyText("p", "strategy-stale-notice", "你的持倉在這份結果產生後有變更，下面的內容可能已過時，請重新執行策略檢查。");
+  notice.setAttribute("role", "status");
+  container.prepend(notice);
+}
+
 function renderHoldingPanel(holding) {
+  if (holdingPanelRenderedOnce) markStrategyResultStale(); // a later render means the position changed
+  holdingPanelRenderedOnce = true;
   currentHolding = holding;
   document.getElementById("holdingPanelBody").innerHTML = holdingPanelHtml(holding);
   wireHoldingPanel();

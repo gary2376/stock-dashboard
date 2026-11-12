@@ -468,9 +468,66 @@ select, .range-btn {
 
 .chart-range-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   margin-bottom: 10px;
+}
+
+.indicator-toggle-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.indicator-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  gap: 6px;
+  padding: 5px 9px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.indicator-toggle:hover,
+.indicator-toggle.active {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.indicator-toggle.active { border-color: var(--indicator-color, var(--border)); }
+
+.indicator-toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.indicator-swatch {
+  width: 10px;
+  height: 3px;
+  background: var(--indicator-color);
+  border-radius: 2px;
+  opacity: 0.45;
+}
+
+.indicator-toggle.active .indicator-swatch { opacity: 1; }
+
+.chart-crosshair-legend {
+  min-height: 18px;
+  margin: -2px 0 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .fund-grid {
@@ -1079,6 +1136,16 @@ select, .range-btn {
 }
 
 @media (max-width: 420px) {
+  .indicator-toggle-bar {
+    flex-wrap: nowrap;
+    margin-inline: -4px;
+    padding: 0 4px 4px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .indicator-toggle { flex: 0 0 auto; }
+
   .score-reason-row {
     grid-template-columns: minmax(72px, 1fr) 42px;
   }
@@ -2024,4 +2091,13 @@ select, .range-btn {
   .overview-status { flex-basis: 100%; }
   .overview-rule-column { min-width: 210px; max-width: 230px; }
   .overview-usage-content { padding-inline: 14px; }
+}
+
+.strategy-stale-notice {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  border-left: 3px solid var(--orange, #eda100);
+  background: var(--surface-2, rgba(237, 161, 0, 0.1));
+  font-size: 13px;
 }

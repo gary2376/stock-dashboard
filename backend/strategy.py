@@ -290,7 +290,8 @@ def verify_rows(rows, selected, notes, registry):
         return kept, ["rows is not a list; nothing verified"]
     normed = {n.name: _norm_map(neutralize(n.text)) for n in notes}
     for n, row in enumerate(rows, 1):
-        tag = f"row {n}"
+        label = _clean_text(row.get("rule"))[:24] if isinstance(row, dict) and isinstance(row.get("rule"), str) else ""
+        tag = f"row {n}" + (f"「{label}」" if label else "")
         if not isinstance(row, dict):
             warns.append(f"{tag}: dropped, not an object")
             continue
@@ -307,17 +308,17 @@ def verify_rows(rows, selected, notes, registry):
             continue
         q = normalize(quote)
         if not _enough_info(q):
-            warns.append(f"{tag}: dropped, quote too short or not informative")
+            warns.append(f"{tag}: dropped, quote too short or not informative（模型引用的筆記原文太短，需至少約 12 個中文字或 6 個英文單字才能確認出處，這一列已略過，不代表規則有問題）")
             continue
         ch = by_id[src]
         if q not in normalize(neutralize(ch.text)):
-            warns.append(f"{tag}: dropped, quote not found in cited chunk {src}")
+            warns.append(f"{tag}: dropped, quote not found in cited chunk {src}（模型引用的句子在你的筆記裡找不到，可能是改寫過；已略過）")
             continue
         note = next((x for x in notes if x.name == ch.file), None)
         hits = [(name, pos) for name, (norm, st, _) in normed.items() for pos in _find_all(norm, q)
                 if _on_cluster_boundaries(st, pos, len(q))]
         if note is None or len(hits) != 1 or hits[0][0] != note.name:
-            warns.append(f"{tag}: dropped, quote occurs {len(hits)} times across the notes (must be unique)")
+            warns.append(f"{tag}: dropped, quote occurs {len(hits)} times across the notes (must be unique)（這句話在筆記中出現不只一次或在別的檔案也有，無法唯一確認出處；已略過）")
             continue
         _, starts, ends = normed[note.name]
         off, end = starts[hits[0][1]], ends[hits[0][1] + len(q) - 1]
@@ -500,7 +501,8 @@ def build_prompt(ticker: str, selected: list[Chunk], registry: dict[str, str]) -
         '- "rule": short rule name, at most 60 characters\n'
         '- "source": the chunk id, e.g. "S1"\n'
         '- "quote": text copied verbatim from that chunk, at most 80 characters; a full sentence or '
-        "clause, never a fragment, a heading or a number\n"
+        "clause of AT LEAST 15 characters (about 12+ Chinese characters or 6+ English words), never a fragment, "
+        "a heading or a number — shorter quotes are discarded by the verifier\n"
         '- "status": "pass", "fail", "unknown" or "conditional" (your judgment of the rule against the facts; '
         'use "unknown" only when no registry key applies; "conditional" is allowed ONLY when HOLD.held is '
         "False or no HOLD.* key exists, and means the verdict depends on whether/how the user holds it)\n"

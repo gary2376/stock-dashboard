@@ -12,6 +12,11 @@
 - [ ] Remove or hide optional targets (no watchlist cards, no holdings, no radar scores, no position note); their steps are silently skipped and the remaining tour still completes.
 - [ ] At 390px width, every tour popover stays inside the viewport with no horizontal scroll; with reduced motion enabled, spotlight movement and target scrolling do not animate.
 - [ ] Index tour includes the 策略批次總覽 navigation link. Dashboard tour highlights totals, holdings pie, and P/L bars when holdings exist. Detail tour covers chart/drawing, range, five-axis evidence warning/reasons, holding lots, analysis, strategy-check verification meaning, and optional position note.
+- [ ] Detail chart defaults to MA20／MA50／MA200／成交量 on and MA10 off; every toggle has a visible color swatch, is keyboard reachable, announces its pressed state, works at 390px without page-level horizontal scrolling, and restores its state after reload (while still working when localStorage is blocked).
+- [ ] MA lines use the full 3-year candle set even when a short range is selected, omit dates before their period is available, have no last-value labels, and switching range does not recompute or remove them.
+- [ ] Volume bars appear at the bottom of the price chart with distinct translucent up/down colors, skip candles whose cached response lacks `volume`, and an entirely old cache without volume still renders the price chart without errors.
+- [ ] Hovering the chart shows the date plus values for enabled MAs and volume; moving the pointer away clears the hover legend.
+- [ ] After toggling indicators, all range buttons still pan/zoom, trend-line draw/clear still works, and buy-date markers plus the average-price line still render and toggle normally. The detail tour includes the indicator-toggle step while `#priceChartPanel` and `#rangeBtns` steps remain intact.
 - [ ] Leave the consent dialog open for over 10 seconds or navigate away while it is open; the tour's consent-wait observer times out/disconnects and does not start later from a stale observer.
 - [ ] Strategy tour explains why notes matter, upload, paste, limits, and that notes stay in local `data/strategy` and are sent to the logged-in AI CLI only when running a check.
 - [ ] `strategy.html` shows current byte/file usage and limits, and its empty state is clear when no notes exist.
