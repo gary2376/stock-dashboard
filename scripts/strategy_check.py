@@ -53,7 +53,8 @@ def main() -> int:
         print(f"holdings: {res['holdings_lots']} lots included in facts (sent to your logged-in AI CLI)")
     print("rule | status | source | quote | evidence")
     for r in rows:
-        print(f"{c(r['rule'])} | {c(r['status'])} | {c(r['file'])} › {c(r['heading'])} | {c(r['quote'])} | {c(r['evidence'])}")
+        scope = f"買入當時 第{r['lot']}筆 {c(r['lot_date'])}" if r.get("scope") == "entry" else "現在"
+        print(f"[{scope}] {c(r['rule'])} | {c(r['status'])} | {c(r['file'])} › {c(r['heading'])} | {c(r['quote'])} | {c(r['evidence'])}")
         print(f"    offset {r['offset']} in {c(r['file'])}; surrounding paragraphs:")
         print("    " + c(r["context"], True).replace("\n", "\n    "))
     advised = [r for r in rows if r["status"] == "conditional" or r["if_held"] or r["if_not_held"]]

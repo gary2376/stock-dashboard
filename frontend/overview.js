@@ -215,6 +215,14 @@
     link.href = `detail.html?ticker=${encodeURIComponent(ticker)}`;
     link.textContent = displayTicker(ticker) || "未知股票";
     cell.appendChild(link);
+    const excluded = Number(tickerResult.entry_rows_excluded);
+    if (Number.isInteger(excluded) && excluded > 0) {
+      const excludedText = `${excluded} 筆買入當時的檢查未列入矩陣`;
+      const note = textNode("small", "overview-ticker-excluded", excludedText);
+      note.title = excludedText;
+      note.setAttribute("aria-label", excludedText);
+      cell.appendChild(note);
+    }
     if (tickerResult.error) cell.appendChild(textNode("span", "overview-ticker-error", "檢查錯誤"));
     row.appendChild(cell);
   }
@@ -261,7 +269,7 @@
     const table = document.createElement("table");
     table.className = "overview-matrix";
     const caption = document.createElement("caption");
-    caption.textContent = "策略規則與股票檢查狀態比較";
+    caption.textContent = "策略規則與股票檢查狀態比較；矩陣只比較「現在」的規則結果，買入當時的檢查不列入。";
     table.appendChild(caption);
     const head = document.createElement("thead");
     const headerRow = document.createElement("tr");

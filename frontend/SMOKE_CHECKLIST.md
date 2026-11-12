@@ -25,6 +25,8 @@
 - [ ] Paste-save preflights UTF-8 byte size against the server-reported single-file and total limits; view, confirmed delete, and refresh work; filenames and note contents containing `<script>`, quotes, and `&` render only as text.
 - [ ] Overlap two strategy file-list refreshes with delayed responses; only the newest response updates usage and the list. After deleting a note, keyboard focus moves to the saved-notes heading.
 - [ ] Detail strategy panel renders a saved result on load with timestamp, engine, holding-lot state, collapsed warnings, all four badge states, verbatim quote/context, evidence, and only non-empty scenario advice.
+- [ ] Detail strategy results always show the scope explanation and a `現在` section; rows missing `scope` render there with a `現在` badge. Entry rows render in a separate `買入當時` section, grouped under `N. YYYY-MM-DD 買入 @價格` from `entry_lots_checked`/`lot_date`, with `買入當時 第N筆` badges; no entry rows means no entry section.
+- [ ] When holdings exist, the detail strategy metadata says `（損益為截至今日）`; HOLD evidence and stale-result notice behavior remain unchanged.
 - [ ] Strategy panel escaping: rule/source/quote/context/evidence/advice/warnings/API errors containing HTML render as text and never execute markup.
 - [ ] Running a check polls about every 3 seconds, stops on done/error/navigation, and restores the button; the fixed disclaimer stays above every result. A result whose ticker differs from the page ticker is treated as no result.
 - [ ] Delay the initial status GET until after a newer POST/poll GET completes; the delayed response must not overwrite the newer state.
@@ -40,6 +42,7 @@
 - [ ] Delay or hang a batch status GET: each GET aborts on its own timeout, and the independent original 30-minute deadline still stops polling, hides progress, and unlocks controls. A valid server `started_at` defines that deadline; repeated `running` responses, manual loads, and BFCache restore never renew it.
 - [ ] Delay the initial overview batch GET until after a newer POST/poll GET completes; the stale response never overwrites the newer state.
 - [ ] Matrix rows are rules and columns are linked tickers; all four statuses include visible text, rule/file/heading/counts and per-ticker counts render, and ticker/global errors show their message. Unknown or missing response fields do not break rendering.
+- [ ] The overview matrix caption says only `現在` rows are compared. A ticker with `entry_rows_excluded > 0` shows the exact small note `N 筆買入當時的檢查未列入矩陣` with matching title/ARIA text; missing or zero counts show no note.
 - [ ] At 360px the overview page itself has no horizontal scroll: the overview header stacks/wraps, only the matrix/usage wrappers scroll horizontally, the first matrix column stays sticky, and controls remain keyboard reachable and focus-visible.
 - [ ] The always-visible overview disclaimer reads `狀態由模型判斷，引文與事實由程式驗證，不構成投資建議`.
 - [ ] Expanding AI 額度使用紀錄 shows kind calls/tokens/cost plus recent rows; cost is labeled `約 USD（API 等值，訂閱方案不一定實際計費）`, and API strings containing HTML render only as text.

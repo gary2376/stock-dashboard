@@ -96,6 +96,7 @@ def prepare(ticker: str, notes_dir=None) -> Prepared:
     warnings += hwarn
     if lots is not None:
         registry.update(strategy.holding_facts(lots, ohlcv, last))
+        registry.update(strategy.entry_facts(lots, ohlcv))
     query = " ".join([*registry, *registry.values(), meta_screen.technical_reason(meta, dossier)])
     if registry.get("TECH.stage2") == "False":
         query += " Stage2 趨勢 均線 50日 200日 trend filter"
@@ -122,5 +123,9 @@ def run_check(ticker: str, engine=None, notes_dir=None) -> dict:
         "rows": rows, "rows_proposed": len(proposed),
         "warnings": [strategy._clean_text(w) for w in [*prep.warnings, *vwarn]],
         "notes": [{"name": n.name, "size": len(n.text.encode("utf-8"))} for n in prep.notes],
-        "holdings_lots": prep.holdings_lots, "facts": dict(prep.registry), "disclaimer": DISCLAIMER,
+        "holdings_lots": prep.holdings_lots,
+        "entry_lots_checked": [{"lot": n, "date": prep.registry[f"BUY{n}.date"],
+                                "price": prep.registry[f"BUY{n}.price"]}
+                               for n in sorted(int(k[3:-5]) for k in prep.registry
+                                               if k.startswith("BUY") and k.endswith(".date"))], "facts": dict(prep.registry), "disclaimer": DISCLAIMER,
     }

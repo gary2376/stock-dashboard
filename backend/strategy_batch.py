@@ -51,8 +51,11 @@ def build_overview(results: dict, errors: dict = None) -> dict:
     tickers = []
     for t, res in results.items():
         counts = dict.fromkeys(STATUSES, 0)
-        rows = {}
+        rows, excluded = {}, 0
         for r in (res or {}).get("rows", []):
+            if r.get("scope", "now") == "entry":  # the matrix is about TODAY; entry rows are per-lot history
+                excluded += 1
+                continue
             if r.get("status") not in counts or "file" not in r or not isinstance(r.get("quote"), str):
                 continue
             digest = hashlib.sha1(strategy.normalize(r["quote"]).encode("utf-8")).hexdigest()[:10]
@@ -65,7 +68,7 @@ def build_overview(results: dict, errors: dict = None) -> dict:
                                           "heading": r.get("heading", ""), "offset": r.get("offset"),
                                           **{f"count_{s}": 0 for s in STATUSES}})
             rule[f"count_{r['status']}"] += 1
-        entry = {"ticker": t, "rows": rows, "counts": counts,
+        entry = {"ticker": t, "rows": rows, "counts": counts, "entry_rows_excluded": excluded,
                  "holdings_lots": (res or {}).get("holdings_lots"), "generated_at": (res or {}).get("generated_at")}
         if t in errors:
             entry["error"] = errors[t]

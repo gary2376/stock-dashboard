@@ -743,7 +743,7 @@ function renderStrategyAdvice(row) {
   return block;
 }
 
-function renderStrategyRow(rawRow, index) {
+function renderStrategyRow(rawRow, index, scopeLabel = "現在") {
   const row = rawRow && typeof rawRow === "object" ? rawRow : {};
   const article = document.createElement("article");
   article.className = "strategy-result-row";
@@ -751,8 +751,9 @@ function renderStrategyRow(rawRow, index) {
   const heading = document.createElement("div");
   heading.className = "strategy-result-row-heading";
   const badge = strategyText("span", `strategy-status-badge status-${row.status || "unknown"}`, strategyStatusLabel(row.status));
+  const scopeBadge = strategyText("span", "strategy-scope-badge", scopeLabel);
   const rule = strategyText("h4", "", row.rule || `規則 ${index + 1}`);
-  heading.append(badge, rule);
+  heading.append(badge, scopeBadge, rule);
   article.appendChild(heading);
 
   const source = document.createElement("p");
@@ -798,6 +799,91 @@ function renderStrategyWarnings(warnings) {
   return details;
 }
 
+function strategyRowScope(row) {
+  return row && row.scope === "entry" ? "entry" : "now";
+}
+
+function strategyLotKey(row, fallbackIndex) {
+  if (Number.isInteger(row.lot)) return `lot:${row.lot}`;
+  if (typeof row.lot_date === "string" && row.lot_date) return `date:${row.lot_date}`;
+  return `unknown:${fallbackIndex}`;
+}
+
+function strategyEntryPrice(value) {
+  if (value === null || value === undefined || value === "") return "--";
+  const displayValue = String(value).replace(/\s+price$/i, "");
+  const price = Number(displayValue);
+  return Number.isFinite(price) ? fmtMoney(price) : displayValue;
+}
+
+function renderStrategySection(title, rows, scopeLabel) {
+  const section = document.createElement("section");
+  section.className = "strategy-result-section";
+  section.appendChild(strategyText("h4", "strategy-result-section-title", title));
+  if (!rows.length) {
+    section.appendChild(strategyText("p", "strategy-result-empty", "目前沒有回傳這個範圍的規則結果。"));
+    return section;
+  }
+  const list = document.createElement("div");
+  list.className = "strategy-result-list";
+  rows.forEach(({ row, originalIndex }) => list.appendChild(renderStrategyRow(row, originalIndex, scopeLabel)));
+  section.appendChild(list);
+  return section;
+}
+
+function renderStrategyEntrySection(entryRows, rawLots) {
+  const lots = Array.isArray(rawLots)
+    ? rawLots.map(lot => lot && typeof lot === "object" ? lot : {})
+    : [];
+  const lotMetaByNumber = new Map();
+  const lotMetaByDate = new Map();
+  lots.forEach(lot => {
+    if (Number.isInteger(lot.lot)) lotMetaByNumber.set(lot.lot, lot);
+    if (typeof lot.date === "string" && lot.date) lotMetaByDate.set(lot.date, lot);
+  });
+
+  const groups = new Map();
+  entryRows.forEach((item, index) => {
+    const key = strategyLotKey(item.row, index);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  });
+
+  const section = document.createElement("section");
+  section.className = "strategy-result-section strategy-entry-section";
+  section.appendChild(strategyText(
+    "h4",
+    "strategy-result-section-title",
+    "買入當時（你每一筆買入在買的那天，依當時的價格與均線資料檢查）",
+  ));
+
+  Array.from(groups.values()).forEach((items, groupIndex) => {
+    const firstRow = items[0].row;
+    const meta = (Number.isInteger(firstRow.lot) && lotMetaByNumber.get(firstRow.lot))
+      || (firstRow.lot_date && lotMetaByDate.get(firstRow.lot_date))
+      || {};
+    const lotNumber = Number.isInteger(firstRow.lot)
+      ? firstRow.lot
+      : Number.isInteger(meta.lot) ? meta.lot : groupIndex + 1;
+    const date = meta.date || firstRow.lot_date || "日期未提供";
+    const group = document.createElement("section");
+    group.className = "strategy-entry-lot";
+    group.appendChild(strategyText(
+      "h5",
+      "strategy-entry-lot-title",
+      `${lotNumber}. ${date} 買入 @${strategyEntryPrice(meta.price)}`,
+    ));
+    const list = document.createElement("div");
+    list.className = "strategy-result-list";
+    items.forEach(({ row, originalIndex }) => {
+      list.appendChild(renderStrategyRow(row, originalIndex, `買入當時 第${lotNumber}筆`));
+    });
+    group.appendChild(list);
+    section.appendChild(group);
+  });
+  return section;
+}
+
 function renderStrategyResult(result) {
   const container = document.getElementById("strategyCheckResult");
   if (!container) return;
@@ -811,22 +897,33 @@ function renderStrategyResult(result) {
     ? "未納入持倉（持倉資料無法讀取）"
     : result.holdings_lots === 0
       ? "目前沒有持倉（持倉相關規則會同時列出「如果已持有／如果沒持有」兩種情境）"
-      : `已納入 ${result.holdings_lots} 批持倉`;
+      : `已納入 ${result.holdings_lots} 批持倉（損益為截至今日）`;
   appendStrategyMeta(meta, "持倉", holdingsText);
   container.appendChild(meta);
 
   const warnings = renderStrategyWarnings(result.warnings);
   if (warnings) container.appendChild(warnings);
 
+  container.appendChild(strategyText(
+    "p",
+    "strategy-scope-note",
+    "「買入當時」只用買入日之前的價格資料重算；當時的財報、新聞、大盤沒有歷史資料，不會被拿來評價過去的買入。損益與「現在」的規則使用今天的資料。",
+  ));
+
   const rows = Array.isArray(result.rows) ? result.rows : [];
   if (!rows.length) {
     container.appendChild(strategyText("p", "strategy-result-empty", "這次檢查沒有回傳規則結果。"));
+    container.appendChild(renderStrategySection("現在（這檔股票今天的狀態）", [], "現在"));
     return;
   }
-  const list = document.createElement("div");
-  list.className = "strategy-result-list";
-  rows.forEach((row, index) => list.appendChild(renderStrategyRow(row, index)));
-  container.appendChild(list);
+  const scopedRows = rows.map((rawRow, originalIndex) => ({
+    row: rawRow && typeof rawRow === "object" ? rawRow : {},
+    originalIndex,
+  }));
+  const entryRows = scopedRows.filter(item => strategyRowScope(item.row) === "entry");
+  const nowRows = scopedRows.filter(item => strategyRowScope(item.row) === "now");
+  if (entryRows.length) container.appendChild(renderStrategyEntrySection(entryRows, result.entry_lots_checked));
+  container.appendChild(renderStrategySection("現在（這檔股票今天的狀態）", nowRows, "現在"));
 }
 
 function stopStrategyPolling() {
@@ -1001,8 +1098,6 @@ function holdingPanelHtml(holding) {
   `;
 }
 
-let holdingPanelRenderedOnce = false;
-
 function markStrategyResultStale() {
   const container = document.getElementById("strategyCheckResult");
   if (!container || !container.querySelector(".strategy-result-meta") || container.querySelector(".strategy-stale-notice")) return;
@@ -1012,8 +1107,7 @@ function markStrategyResultStale() {
 }
 
 function renderHoldingPanel(holding) {
-  if (holdingPanelRenderedOnce) markStrategyResultStale(); // a later render means the position changed
-  holdingPanelRenderedOnce = true;
+  markStrategyResultStale(); // initial render uses holdingPanelHtml directly, so every call here is a change
   currentHolding = holding;
   document.getElementById("holdingPanelBody").innerHTML = holdingPanelHtml(holding);
   wireHoldingPanel();

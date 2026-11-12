@@ -1005,6 +1005,35 @@ select, .range-btn {
   padding-left: 18px;
 }
 
+.strategy-scope-note {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background: rgba(80, 201, 206, 0.08);
+  border: 1px solid rgba(80, 201, 206, 0.25);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.strategy-result-section + .strategy-result-section { margin-top: 20px; }
+
+.strategy-result-section-title {
+  margin: 0 0 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.strategy-entry-lot + .strategy-entry-lot { margin-top: 14px; }
+
+.strategy-entry-lot-title {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
 .strategy-result-list {
   display: flex;
   flex-direction: column;
@@ -1037,6 +1066,17 @@ select, .range-btn {
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
+}
+
+.strategy-scope-badge {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .status-pass {
@@ -1962,7 +2002,13 @@ select, .range-btn {
 }
 
 .overview-matrix { min-width: 720px; }
-.overview-matrix caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.overview-matrix caption {
+  padding: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: left;
+}
 
 .overview-matrix th,
 .overview-matrix td,
@@ -2013,6 +2059,17 @@ select, .range-btn {
 .overview-ticker-heading { min-width: 138px; text-align: center !important; }
 .overview-ticker-heading a { color: var(--blue); text-decoration: none; }
 .overview-ticker-heading a:hover { text-decoration: underline; }
+
+.overview-ticker-excluded {
+  display: block;
+  max-width: 150px;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.35;
+  white-space: normal;
+}
 
 .overview-ticker-error {
   display: block;

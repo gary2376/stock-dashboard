@@ -84,6 +84,13 @@ def trendline_project(swings, last_idx):
     return proj, slope
 
 
+def stop_target(lows, h, l, price):
+    """(stop, target): 1% under the nearest real swing low below `price` (else the 20-bar low), and the 60-bar high."""
+    below_lows = [p for (_, _, p) in lows if p < price]
+    nearest_low = max(below_lows) if below_lows else min(l[-20:])
+    return nearest_low * 0.99, max(h[-60:])
+
+
 def analyze_core(t, o, h, l, c, v, dates):
     TH = profile()["technical"]
     n = len(c)
@@ -195,11 +202,8 @@ def analyze_core(t, o, h, l, c, v, dates):
     abnormal = bool(break50_flags) or bool(bigred_flags) or multi_gapdown
 
     # --- R:R，停損用價格下方最近一個真實swing low ---
-    below_lows = [p for (_, _, p) in lows if p < price]
-    nearest_low = max(below_lows) if below_lows else min(l[-20:])
-    stop = nearest_low * 0.99
+    stop, hi60 = stop_target(lows, h, l, price)
     risk = (price - stop) / price * 100
-    hi60 = max(h[-60:])
     reward = (hi60 - price) / price * 100
     rr = reward / risk if risk > 0 else 0
     tight_stop_ok = risk <= TH["stop_max_pct"]

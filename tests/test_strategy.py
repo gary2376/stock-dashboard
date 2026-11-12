@@ -153,7 +153,8 @@ def test_evidence_regenerated_and_hostile_note_cannot_add_fields(note):
     assert r["evidence"] == "TECH.rsi14=48.2; TECH.stop_pct=6.1 pct"
     assert "compliant" not in r and "validated_pass" not in r
     assert set(r) == {"rule", "source", "quote", "status", "fact_refs", "evidence", "file", "offset",
-                      "context", "verified", "if_held", "if_not_held", "advice_verified"}
+                      "context", "verified", "if_held", "if_not_held", "advice_verified", "scope", "lot", "lot_date"}
+    assert (r["scope"], r["lot"], r["lot_date"]) == ("now", None, "")
 
 
 def test_unselected_source_and_bad_status_dropped(note):
