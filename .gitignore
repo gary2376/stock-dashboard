@@ -25,3 +25,6 @@ data/strategy/
 graft/
 data/strategy_checks/
 data/llm_usage.jsonl
+data/pins.json
+data/.locks/
+data_demo/
