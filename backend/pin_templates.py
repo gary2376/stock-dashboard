@@ -108,12 +108,12 @@ def _no_avg_down(m):
 def _near_high(m):
     """Distance below the 52w high (positive %) <= N  <=>  vs_52w_high_pct >= -N."""
     op = {"<=": ">=", "<": ">"}.get(_op(m))
-    return _pair(None, f"BUY{{lot}}.vs_52w_high_pct {op} -{m.group("n")} pct") if op else None
+    return _pair(None, f"BUY{{lot}}.vs_52w_high_pct {op} -{m.group('n')} pct") if op else None
 
 
 def _vol(m):
     op = _op(m)
-    return _pair(None, f"BUY{{lot}}.vol_vs_20d {op} {m.group("n")} x") if op in (">", ">=") else None
+    return _pair(None, f"BUY{{lot}}.vol_vs_20d {op} {m.group('n')} x") if op in (">", ">=") else None
 
 
 _T = [
