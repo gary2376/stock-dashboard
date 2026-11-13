@@ -34,6 +34,7 @@ class NoCacheStaticFiles(StaticFiles):
         return response
 
 import data_provider as dp
+import config
 import llm_usage
 import pins
 import strategy
@@ -43,6 +44,12 @@ from atomic import write_text_atomic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import generate_analysis as ga  # noqa: E402 — reuses its pick_engine()/run_llm() for /api/chat
+
+
+def _demo_block() -> None:
+    """Demo mode: features that need an AI CLI or live data are off (read/CRUD stays available)."""
+    if config.DEMO:
+        raise HTTPException(403, config.DEMO_MESSAGE)
 
 
 def _require_valid_ticker(ticker: str) -> str:
@@ -87,6 +94,11 @@ async def same_origin_writes(request: Request, call_next):
         if urlparse(origin).netloc.lower() != (request.headers.get("host") or "").lower():
             return JSONResponse({"detail": "來源不符"}, status_code=403)
     return await call_next(request)
+
+
+@app.get("/api/info")
+def info():
+    return {"demo": config.DEMO, "version": "4.2"}
 
 
 # manual "更新股價" / "更新基本面" buttons — both run the same scripts the cron jobs would,
@@ -295,6 +307,7 @@ class TickerIn(BaseModel):
 
 @app.post("/api/tickers")
 def add_ticker(body: TickerIn):
+    _demo_block()
     raw = body.ticker.strip().upper()
     if not raw:
         raise HTTPException(400, "ticker 不可空白")
@@ -576,6 +589,7 @@ def _has_notes_or_pins() -> bool:
 
 @app.post("/api/strategy/check/{ticker}")
 def strategy_check_start(ticker: str):
+    _demo_block()
     ticker = _require_valid_ticker(ticker)
     if ticker not in _tickers():
         raise HTTPException(404, "ticker not in watchlist")
@@ -678,6 +692,7 @@ class BatchBody(BaseModel):
 
 @app.post("/api/strategy/batch")
 def strategy_batch_start(body: BatchBody):
+    _demo_block()
     try:
         tickers = strategy_batch.normalize_tickers(body.tickers, _tickers())
     except ValueError as e:
@@ -736,6 +751,8 @@ def _pins_call(fn, *a, **kw):
         raise HTTPException(409, str(e))
     except pins.PinNotFound:
         raise HTTPException(404, "pin not found")
+    except pins.PinDemoBlocked as e:
+        raise HTTPException(403, str(e))
     except pins.PinRateLimited as e:
         raise HTTPException(429, str(e))
     except pins.PinCompileFailed as e:
@@ -928,6 +945,8 @@ def import_backup(body: BackupIn):
     bad = [t for t in tickers if not dp.is_valid_ticker(t)]
     if bad:
         raise HTTPException(400, f"備份檔裡有無效代號：{', '.join(bad)}")
+    if config.DEMO and any(not (dp._read_cache(t) or {}).get("candles") for t in tickers):
+        raise HTTPException(400, config.DEMO_MESSAGE)  # demo mode can't fetch prices for new tickers
     favorites = [t.strip().upper() for t in body.favorites]
     for t in favorites:
         if not dp.is_valid_ticker(t):
@@ -1005,12 +1024,14 @@ def import_backup(body: BackupIn):
 
 @app.post("/api/refresh/prices")
 def refresh_prices():
+    _demo_block()
     _start_refresh("prices", "refresh_prices.py", timeout=300)
     return {"status": "started"}
 
 
 @app.post("/api/refresh/analysis")
 def refresh_analysis():
+    _demo_block()
     _start_refresh("analysis", "generate_analysis.py", timeout=5400)
     return {"status": "started"}
 
@@ -1109,6 +1130,7 @@ class ChatIn(BaseModel):
 
 @app.post("/api/chat")
 def chat(body: ChatIn):
+    _demo_block()
     message = body.message.strip()
     if not message:
         raise HTTPException(400, "問題不可空白")

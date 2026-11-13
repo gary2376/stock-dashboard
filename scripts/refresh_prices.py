@@ -28,6 +28,9 @@ def refresh(ticker: str):
 
 
 if __name__ == "__main__":
+    import config
+    if config.DEMO:
+        sys.exit("示範模式：不連網")
     tickers = sys.argv[1:] or json.loads((DATA_DIR / "tickers.json").read_text())
     failures = []
     for t in tickers:

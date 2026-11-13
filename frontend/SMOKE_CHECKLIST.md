@@ -5,6 +5,10 @@
 - [ ] Confirming stores consent; subsequent loads do not show the modal. With localStorage blocked, the page still works and the modal appears on each load.
 - [ ] Disclaimer footer and TradingView attribution link appear on index.html, dashboard.html, detail.html, strategy.html, and overview.html.
 - [ ] At mobile width, the modal and footer fit without horizontal scrolling.
+- [ ] When `/api/info` returns `{demo:true}`, every page shows the fixed, non-permanently-dismissible demo banner with the synthetic-data warning and GitHub README link; `<html data-demo="1">` is set, the banner does not shift the mobile layout, and tours still start/replay normally.
+- [ ] A missing, 404, invalid, or unreachable `/api/info` is treated as non-demo without breaking any page; the endpoint is fetched only once per page load and `window.sdDemo.isDemo()` / `onReady()` resolve normally.
+- [ ] In demo mode, index add/update controls, detail strategy check, overview batch check, and chat send are disabled with a title plus `aria-describedby` explanation. The chat bubble still opens and the first assistant message explains demo mode; busy/poll/render transitions never re-enable these controls.
+- [ ] Pin 編譯 remains enabled in demo mode: template-only rules can still compile, while an LLM-path 403 displays the backend `detail` text verbatim and restores the row controls.
 - [ ] In a browser without `showModal()`, the consent fallback still opens, traps focus on confirm, blocks Escape dismissal, confirms normally, and restores focus.
 - [ ] On the first visit to each of `index.html`, `dashboard.html`, `detail.html`, `strategy.html`, and `overview.html`, the tour waits until the consent dialog is confirmed, then starts once; reloading that page does not auto-start it again.
 - [ ] With localStorage blocked, the tour still works and does not repeatedly auto-start within the same document; the fixed bottom-left `？ 導覽` button can replay it at any time without covering the bottom-right AI bubble or disclaimer text.

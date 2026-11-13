@@ -24,6 +24,7 @@ let strategyPageActive = true;
 let strategyStatusGeneration = 0;
 let strategyPollFailureCount = 0;
 let strategyCheckIsRunning = false;
+let demoMode = false;
 let pinsEvalGeneration = 0;
 
 const STRATEGY_POLL_INTERVAL_MS = 3000;
@@ -830,8 +831,12 @@ function setStrategyCheckRunning(running) {
   const button = document.getElementById("runStrategyCheckBtn");
   if (panel) panel.setAttribute("aria-busy", String(running));
   if (button) {
-    button.disabled = running;
+    button.disabled = demoMode || running;
     button.textContent = running ? "檢查執行中…" : "執行策略檢查";
+    if (demoMode) {
+      button.title = "示範模式：策略檢查已停用";
+      button.setAttribute("aria-describedby", "sdDemoDisabledDescription");
+    }
   }
 }
 
@@ -1142,6 +1147,7 @@ async function loadStrategyCheck(options = {}) {
 }
 
 async function runStrategyCheck() {
+  if (demoMode) return;
   stopStrategyPolling();
   strategyStatusGeneration += 1;
   strategyPollFailureCount = 0;
@@ -1169,7 +1175,15 @@ async function runStrategyCheck() {
 
 function wireStrategyCheckPanel() {
   document.getElementById("runStrategyCheckBtn").addEventListener("click", runStrategyCheck);
+  setStrategyCheckRunning(strategyCheckIsRunning);
   loadStrategyCheck({ initial: true });
+}
+
+if (window.sdDemo?.onReady) {
+  window.sdDemo.onReady(isDemo => {
+    demoMode = isDemo;
+    setStrategyCheckRunning(strategyCheckIsRunning);
+  });
 }
 
 function leaveStrategyPage() {

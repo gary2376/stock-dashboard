@@ -1,0 +1,9 @@
+# docker compose up  ->  http://127.0.0.1:8013  (synthetic demo data; AI features are disabled)
+# The port is published on localhost ONLY: the API has no authentication.
+services:
+  stock-dashboard-demo:
+    build: .
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "127.0.0.1:8013:8013"

@@ -21,6 +21,7 @@ import pin_templates
 import snapshots
 import strategy
 from atomic import write_text_atomic
+import config
 from config import DATA_DIR
 
 try:
@@ -54,6 +55,10 @@ class PinConflict(Exception):
 
 class PinRateLimited(Exception):
     """Too many LLM compiles (HTTP 429)."""
+
+
+class PinDemoBlocked(Exception):
+    """LLM compile attempted in demo mode (HTTP 403)."""
 
 
 class PinNotFound(KeyError):
@@ -306,6 +311,8 @@ def build_compile_prompt(text: str) -> str:
 
 
 def _from_llm(text: str, engine) -> dict:
+    if config.DEMO:
+        raise PinDemoBlocked(config.DEMO_MESSAGE)
     _rate_check()  # PinRateLimited propagates: attempts are counted before the call
     try:
         engine = engine or ga.pick_engine(prefer="claude")

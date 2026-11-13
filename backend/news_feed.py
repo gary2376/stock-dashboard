@@ -22,6 +22,7 @@ import requests
 
 from atomic import write_text_atomic
 
+import config  # noqa: E402
 from config import DATA_DIR  # noqa: E402
 
 CACHE_DIR = DATA_DIR / "market_cache"
@@ -32,7 +33,7 @@ TTL_SECONDS = 3600
 MAX_AGE_DAYS = 45
 
 # Pages that look like news results but are quote / chart / "should you buy" boilerplate — they
-# crowded real headlines out of the top-N (e.g. every AA result was a quote page or option chart).
+# crowded real headlines out of the top-N (e.g. every result for a two-letter ticker was a quote page or option chart).
 JUNK = re.compile(
     r"(stock )?price,? news,? quote|quote (and|&) history|interactive stock chart|price forecast|"
     r"stock forecast|should you buy|stock (price )?today|trades at (EUR|USD)|\bput\b.*\bstock chart|"
@@ -118,6 +119,8 @@ def _parse_rss(xml_text: str, default_publisher: str | None = None) -> list[dict
 
 
 def _get(url: str) -> str | None:
+    if config.DEMO:
+        return None
     try:
         r = requests.get(url, headers=UA, timeout=10)
         return r.text if r.ok else None
@@ -176,8 +179,8 @@ def _relevance(ticker: str, name: str):
         return lambda t: name in t or code in t
     full = _clean_name(name).lower()
     t = re.escape(ticker)
-    # short tickers ('AA') collide with ordinary words/labels ("Class AA title") — they only count in
-    # their formal contexts: (AA), NYSE:AA, NASDAQ:AA. Longer ones can stand alone.
+    # short tickers (e.g. two letters) collide with ordinary words/labels ("Class AB title") — they only count in
+    # their formal contexts: (AB), NYSE:AB, NASDAQ:AB. Longer ones can stand alone.
     sym = re.compile(rf"\({t}\)|(?:NYSE|NASDAQ|NYSEARCA)(?::\s*|\s+){t}\b" if len(ticker) <= 3
                      else rf"(?<![A-Za-z]){t}(?![A-Za-z])")
     return lambda t: full in t.lower() or bool(sym.search(t))

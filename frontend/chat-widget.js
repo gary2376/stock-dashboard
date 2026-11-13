@@ -2,9 +2,11 @@
   "use strict";
 
   const OPEN_STATE_KEY = "stockDashboard.chatWidgetOpen";
+  const DEMO_MESSAGE = "示範模式：此功能需要你登入的 AI CLI 或網路資料，已停用";
   const messages = [];
   let isLoading = true;
   let isBusy = false;
+  let demoMode = false;
 
   function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -110,12 +112,23 @@
     messageList.scrollTop = messageList.scrollHeight;
   }
 
+  function ensureDemoMessage() {
+    if (!demoMode) return;
+    const existing = messages.findIndex(message => message.demo === true);
+    if (existing >= 0) messages.splice(existing, 1);
+    messages.unshift({ role: "assistant", text: DEMO_MESSAGE, demo: true });
+  }
+
   function setBusy(busy) {
     isBusy = busy;
     input.disabled = busy || isLoading;
-    sendButton.disabled = busy || isLoading;
+    sendButton.disabled = demoMode || busy || isLoading;
     clearButton.disabled = busy || isLoading;
     sendButton.textContent = busy ? "思考中…" : "送出";
+    if (demoMode) {
+      sendButton.title = "示範模式：聊天已停用";
+      sendButton.setAttribute("aria-describedby", "sdDemoDisabledDescription");
+    }
   }
 
   async function responseError(response) {
@@ -143,11 +156,13 @@
           messages.push({ role: message.role, text: message.text });
         }
       });
+      ensureDemoMessage();
     } catch (error) {
       messages.length = 0;
       messages.push({ role: "error", text: `⚠️ 無法載入對話：${error.message || "網路連線異常"}` });
     } finally {
       isLoading = false;
+      ensureDemoMessage();
       setBusy(false);
       renderMessages();
     }
@@ -166,7 +181,7 @@
   form.addEventListener("submit", async event => {
     event.preventDefault();
     const message = input.value.trim();
-    if (!message || isBusy || isLoading) return;
+    if (!message || demoMode || isBusy || isLoading) return;
 
     messages.push({ role: "user", text: message });
     const pending = { role: "assistant", text: "思考中…", pending: true };
@@ -208,11 +223,21 @@
     } catch (error) {
       messages.push({ role: "error", text: `⚠️ 清空失敗：${error.message || "網路連線異常"}` });
     } finally {
+      ensureDemoMessage();
       setBusy(false);
       renderMessages();
       input.focus();
     }
   });
+
+  if (window.sdDemo?.onReady) {
+    window.sdDemo.onReady(isDemo => {
+      demoMode = isDemo;
+      ensureDemoMessage();
+      setBusy(isBusy);
+      renderMessages();
+    });
+  }
 
   setOpen(storedOpenState(), false);
   loadHistory();

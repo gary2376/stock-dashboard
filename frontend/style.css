@@ -24,6 +24,41 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+.demo-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  width: 100%;
+  max-height: min(30dvh, 180px);
+  overflow: auto;
+  padding: 8px 16px;
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--blue);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.demo-banner a {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-underline-offset: 2px;
+}
+
+.demo-banner a:hover,
+.demo-banner a:focus-visible {
+  color: var(--blue);
+}
+
+@media (max-width: 560px) {
+  .demo-banner {
+    max-height: 34dvh;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+}
+
 header.page-header {
   display: flex;
   align-items: center;

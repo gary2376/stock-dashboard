@@ -21,7 +21,25 @@ let marketFilter = "all";
 let searchQuery = "";
 let sortDir = "asc";
 let statusPollTimer = null;
+let demoMode = false;
 const wasRunning = { prices: false, analysis: false };
+
+function applyDemoControls() {
+  if (!demoMode) return;
+  [addTickerBtn, refreshPricesBtn, refreshAnalysisBtn].forEach(button => {
+    if (!button) return;
+    button.disabled = true;
+    button.title = "示範模式：此功能已停用";
+    button.setAttribute("aria-describedby", "sdDemoDisabledDescription");
+  });
+}
+
+if (window.sdDemo?.onReady) {
+  window.sdDemo.onReady(isDemo => {
+    demoMode = isDemo;
+    applyDemoControls();
+  });
+}
 
 // LLM-generated analysis text (and anything else sourced outside our own code) goes through
 // innerHTML templates below — escape it so a weird company name or adversarial model output
@@ -50,7 +68,7 @@ function fmtRefreshTime(iso) {
 function updateRefreshUI(kind, state) {
   const btn = kind === "prices" ? refreshPricesBtn : refreshAnalysisBtn;
   const label = kind === "prices" ? refreshPricesStatus : refreshAnalysisStatus;
-  btn.disabled = state.running;
+  btn.disabled = demoMode || state.running;
   if (state.running) {
     label.textContent = "更新中…";
     label.classList.remove("error");
@@ -91,6 +109,7 @@ async function pollRefreshStatus() {
 }
 
 async function triggerRefresh(kind) {
+  if (demoMode) return;
   const res = await fetch(`/api/refresh/${kind}`, { method: "POST" });
   const data = await res.json();
   if (!res.ok) {
@@ -297,6 +316,7 @@ async function load() {
 }
 
 async function addTicker() {
+  if (demoMode) return;
   const t = newTicker.value.trim().toUpperCase();
   if (!t) return;
   addTickerBtn.disabled = true;
@@ -316,7 +336,7 @@ async function addTicker() {
     showStatus(`已新增 ${t}，Codex分析背景產生中，稍後重新整理可看到`);
     load();
   } finally {
-    addTickerBtn.disabled = false;
+    addTickerBtn.disabled = demoMode;
   }
 }
 

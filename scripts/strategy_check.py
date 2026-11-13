@@ -21,6 +21,9 @@ c = strategy._clean_text  # model/user-derived text is sanitised again at print 
 
 
 def main() -> int:
+    import config
+    if config.DEMO:
+        sys.exit("示範模式：不呼叫 AI CLI")
     ap = argparse.ArgumentParser()
     ap.add_argument("ticker")
     ap.add_argument("--engine", choices=["claude", "codex"], default=None)

@@ -58,6 +58,7 @@ import snapshots  # noqa: E402
 import strategy  # noqa: E402
 from atomic import try_lock, write_text_atomic  # noqa: E402
 
+import config  # noqa: E402
 from config import DATA_DIR  # noqa: E402
 
 ANALYSIS_DIR = DATA_DIR / "analysis"
@@ -376,6 +377,8 @@ def run_llm(prompt: str, engine: str, tag: str = "") -> str:
     # shell commands, no further web/news lookups of its own (the news block above is already
     # the real, dated fetch; letting the model additionally browse would reopen the exact
     # "a weird company name tricks it into reaching for a tool" risk this lockdown exists for)
+    if config.DEMO:
+        raise RuntimeError(config.DEMO_MESSAGE)
     if engine == "codex":
         cmd = ["codex", "exec", "--skip-git-repo-check", "--sandbox", "read-only", prompt]
     elif engine == "claude":
@@ -473,6 +476,8 @@ def generate(ticker: str, engine: str, run_id: str | None = None):
 
 
 if __name__ == "__main__":
+    if config.DEMO:
+        sys.exit("示範模式：不連網，也不呼叫 AI CLI")
     try:
         engine = pick_engine()
     except RuntimeError as e:

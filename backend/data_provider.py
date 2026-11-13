@@ -20,6 +20,7 @@ import yfinance as yf
 
 from atomic import write_text_atomic
 
+import config  # noqa: E402
 from config import DATA_DIR  # noqa: E402
 
 CACHE_DIR = DATA_DIR / "price_cache"
@@ -55,6 +56,8 @@ _tw_names_loaded_at = 0.0
 
 def _load_tw_names():
     global _tw_names, _tw_names_loaded_at
+    if config.DEMO:
+        return
     now = time.time()
     if _tw_names and now - _tw_names_loaded_at < _TW_NAME_TTL:
         return
@@ -157,6 +160,8 @@ def _history_full(ticker: str):
     cached = _read_cache(ticker)
     if cached and cached.get("candles"):
         return _candles_to_df(cached["candles"])
+    if config.DEMO:  # never live-fetch in demo mode: an uncached ticker just has no price data
+        return pd.DataFrame({c: [] for c in ("Open", "High", "Low", "Close", "Volume")}, index=pd.DatetimeIndex([]))
     df = yf.Ticker(ticker).history(period="5y", auto_adjust=False)
     if not df.empty:
         _write_cache(ticker, df=df)
@@ -232,6 +237,8 @@ def earnings_history(ticker: str):
     from yfinance's earnings-dates table. Structured numbers beat headline-scraping: it is what tells
     the analysis whether a quarter was a beat or a miss (the model otherwise has to say "unknown").
     Returns ([], None) on any failure — a missing table must not break the refresh."""
+    if config.DEMO:
+        return [], None
     try:
         table = yf.Ticker(ticker).get_earnings_dates(limit=8)
     except Exception as e:
@@ -310,7 +317,7 @@ def fetch_fundamentals_live(ticker: str) -> dict:
         "target_low_price": _finite(info.get("targetLowPrice")),
         "num_analyst_opinions": _finite(info.get("numberOfAnalystOpinions")),
         "recommendation_key": info.get("recommendationKey"),
-        # next known binary event — the same kind of event that moves a stock around earnings
+        # next known binary event (an earnings date can move a stock more than the chart does)
         "next_earnings_date": earnings_date,
         "earnings_history": history,
     }
@@ -320,6 +327,8 @@ def fundamentals(ticker: str) -> dict:
     cached = _read_cache(ticker)
     if cached and cached.get("fundamentals"):
         return cached["fundamentals"]
+    if config.DEMO:
+        return {"name": ticker}
     try:
         result = fetch_fundamentals_live(ticker)
         if result.get("name") != ticker:
@@ -364,6 +373,8 @@ def candles(ticker: str, range_key: str) -> list[dict]:
 
 
 def ticker_exists(ticker: str) -> bool:
+    if config.DEMO:
+        return False
     try:
         df = yf.Ticker(ticker).history(period="5d")
         return not df.empty

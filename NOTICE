@@ -1,0 +1,17 @@
+Stock Dashboard
+Copyright (c) 2026 gary2376 — MIT License (see LICENSE)
+
+Third-party software and services used by this project:
+
+- TradingView Lightweight Charts (Apache License 2.0) — https://www.tradingview.com/
+  Charts on the detail page are created with TradingView Lightweight Charts. The TradingView logo/link is
+  kept visible on the chart and in the page footer. Please keep this attribution if you redistribute.
+  Check the NOTICE file shipped with the library version you use for the exact wording.
+- Chart.js (MIT) — https://www.chartjs.org/
+- FastAPI, Uvicorn, Pydantic, pandas, requests, lxml (MIT/BSD-style licenses)
+- yfinance (Apache License 2.0) — a community library that reads data published by Yahoo!. Yahoo's terms
+  restrict the data to personal use; this project is intended for personal, non-commercial use only.
+- Google News / Yahoo RSS feeds are fetched for headlines under their own terms (personal, non-commercial).
+
+The demo dataset (scripts/load_demo.py) is entirely synthetic and fictional. No real market data is bundled.
+This project is not affiliated with or endorsed by TradingView, Yahoo, Google, Anthropic or OpenAI.

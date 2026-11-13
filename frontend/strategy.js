@@ -385,7 +385,7 @@
       } catch (error) {
         if (error?.name === "AbortError") {
           showPinsStatus("編譯逾時或已中止，請稍後重試", true);
-        } else if (error instanceof PinRequestError && error.status === 429) {
+        } else if (error instanceof PinRequestError && (error.status === 403 || error.status === 429)) {
           showPinsStatus(error.detail, true);
         } else if (!(await handlePinConflict(error))) {
           showPinsStatus(`編譯失敗：${error.message}`, true);

@@ -34,6 +34,14 @@
   let pageActive = true;
   let batchIsRunning = false;
   let stocksLoaded = false;
+  let demoMode = false;
+
+  function applyDemoControl() {
+    if (!demoMode) return;
+    runButton.disabled = true;
+    runButton.title = "示範模式：策略檢查已停用";
+    runButton.setAttribute("aria-describedby", "sdDemoDisabledDescription");
+  }
 
   function textNode(tag, className, value) {
     const node = document.createElement(tag);
@@ -73,7 +81,7 @@
   function updateSelectionUi() {
     const count = selectedTickers().length;
     tickerCounterEl.textContent = `已選 ${count} / ${MAX_TICKERS} 檔`;
-    runButton.disabled = batchIsRunning || count === 0;
+    runButton.disabled = demoMode || batchIsRunning || count === 0;
   }
 
   function makeTickerOption(stock, index, market) {
@@ -164,6 +172,7 @@
     if (!wanted.size) setStatus(market === "tw" ? "觀察清單沒有台股。" : "觀察清單沒有美股。", true);
     else setStatus("", false);
     updateSelectionUi();
+    applyDemoControl();
   }
 
   function setRunning(running) {
@@ -577,6 +586,7 @@
   }
 
   async function runBatch() {
+    if (demoMode) return;
     const tickers = selectedTickers();
     if (!tickers.length) {
       setStatus("請至少選擇一檔股票。", true);
@@ -776,6 +786,14 @@
   window.addEventListener("pageshow", event => {
     if (event.persisted || !pageActive) restorePage();
   });
+
+  if (window.sdDemo?.onReady) {
+    window.sdDemo.onReady(isDemo => {
+      demoMode = isDemo;
+      updateSelectionUi();
+      applyDemoControl();
+    });
+  }
 
   loadStocks();
   loadBatch({ initial: true });

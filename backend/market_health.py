@@ -18,6 +18,7 @@ import yfinance as yf
 
 from atomic import write_text_atomic
 
+import config  # noqa: E402
 from config import DATA_DIR  # noqa: E402
 
 CACHE_DIR = DATA_DIR / "market_cache"
@@ -79,6 +80,11 @@ def _fetch(market: str) -> dict:
 def market_health(ticker: str) -> dict:
     market = market_of(ticker)
     cache_file = CACHE_DIR / f"{market}.json"
+    if config.DEMO:  # demo data never expires and never triggers a fetch
+        try:
+            return json.loads(cache_file.read_text())["data"]
+        except (OSError, ValueError, KeyError):
+            return {"symbol": INDEX_FOR[market], "healthy": None, "desc": "示範模式沒有大盤資料"}
     if cache_file.exists():
         try:
             cached = json.loads(cache_file.read_text())
