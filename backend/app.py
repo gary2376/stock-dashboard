@@ -35,6 +35,7 @@ class NoCacheStaticFiles(StaticFiles):
 
 import data_provider as dp
 import config
+import llm_engines
 import llm_usage
 import pins
 import strategy
@@ -98,7 +99,7 @@ async def same_origin_writes(request: Request, call_next):
 
 @app.get("/api/info")
 def info():
-    return {"demo": config.DEMO, "version": "4.2"}
+    return {"demo": config.DEMO, "version": "4.2", "engine": llm_engines.info()}
 
 
 # manual "更新股價" / "更新基本面" buttons — both run the same scripts the cron jobs would,

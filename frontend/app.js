@@ -17,6 +17,7 @@ const exportBackupBtn = document.getElementById("exportBackupBtn");
 const importBackupBtn = document.getElementById("importBackupBtn");
 const importBackupFile = document.getElementById("importBackupFile");
 const backupStatus = document.getElementById("backupStatus");
+const firstRunEmptyTemplate = document.getElementById("firstRunEmptyTemplate");
 let marketFilter = "all";
 let searchQuery = "";
 let sortDir = "asc";
@@ -260,12 +261,19 @@ function renderCard(s, range) {
   </article>`;
 }
 
+function renderFirstRunEmptyState() {
+  grid.replaceChildren(firstRunEmptyTemplate.content.cloneNode(true));
+  grid.querySelector(".first-run-focus-btn")?.addEventListener("click", () => {
+    newTicker.focus();
+  });
+}
+
 async function load() {
   const range = rangeSelect.value;
   const res = await fetch(`/api/stocks?range=${range}`);
   const allStocks = await res.json();
   if (!allStocks.length) {
-    grid.innerHTML = `<div class="empty">watchlist 是空的，去編輯 data/tickers.json</div>`;
+    renderFirstRunEmptyState();
     return;
   }
   const q = searchQuery.trim().toLowerCase();
@@ -333,7 +341,7 @@ async function addTicker() {
       return;
     }
     newTicker.value = "";
-    showStatus(`已新增 ${t}，Codex分析背景產生中，稍後重新整理可看到`);
+    showStatus(`已新增 ${t}，AI 分析背景產生中，稍後重新整理可看到`);
     load();
   } finally {
     addTickerBtn.disabled = demoMode;

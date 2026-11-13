@@ -21,7 +21,7 @@ and market reasons are generated in Python from the same rule tiers as their sco
 disagree with the number), the other three are written by the model against the rubric below.
 
 Engine: auto-detects `codex` or `claude` on PATH (codex preferred if both exist); force one with
-ANALYSIS_ENGINE=codex|claude. Neither installed -> prints setup instructions and exits.
+ANALYSIS_ENGINE=codex|claude|openai|command (see docs/ENGINES.md). Nothing usable -> prints setup instructions and exits.
 
 Quality: the prompt is self-contained — works with a bare codex/claude install. If you also have
 the AI Berkshire investment-research skill pack installed
@@ -53,6 +53,7 @@ import market_health  # noqa: E402
 import news_feed  # noqa: E402
 import score_guards  # noqa: E402
 from analysis_profile import profile  # noqa: E402
+import llm_engines  # noqa: E402
 import llm_usage  # noqa: E402
 import snapshots  # noqa: E402
 import strategy  # noqa: E402
@@ -352,24 +353,9 @@ def unsupported_entities(data: dict, prompt: str) -> list[str]:
 
 
 def pick_engine(prefer: str | None = None) -> str:
-    """ANALYSIS_ENGINE forces one; otherwise `prefer` (if installed) wins, then codex, then claude."""
-    forced = os.environ.get("ANALYSIS_ENGINE")
-    if forced in ("codex", "claude"):
-        if not shutil.which(forced):
-            raise RuntimeError(f"ANALYSIS_ENGINE={forced} but `{forced}` not found on PATH")
-        return forced
-    if prefer in ("codex", "claude") and shutil.which(prefer):
-        return prefer
-    if shutil.which("codex"):
-        return "codex"
-    if shutil.which("claude"):
-        return "claude"
-    raise RuntimeError(
-        "找不到 codex 或 claude CLI。安裝其中一個：\n"
-        "  Codex:  npm install -g @openai/codex   (或 https://chatgpt.com/codex/install.sh)\n"
-        "  Claude: npm install -g @anthropic-ai/claude-code\n"
-        "裝好、登入後重跑即可，見 README.md「基本面分析引擎」。"
-    )
+    """ANALYSIS_ENGINE / data/llm.json forces one of claude|codex|openai|command; otherwise `prefer` (if usable),
+    then codex -> claude -> openai (LLM_BASE_URL) -> command (LLM_COMMAND). See backend/llm_engines.py."""
+    return llm_engines.pick_engine(prefer)
 
 
 def run_llm(prompt: str, engine: str, tag: str = "") -> str:
@@ -386,6 +372,8 @@ def run_llm(prompt: str, engine: str, tag: str = "") -> str:
         # skills / plugins / MCP servers, which otherwise add ~60k input tokens to every call
         cmd = ["claude", "-p", prompt, "--output-format", "json", "--tools", "",
                "--strict-mcp-config", "--disable-slash-commands", "--setting-sources", "project"]
+    elif engine in ("openai", "command"):
+        return llm_engines.run(prompt, engine, tag)
     else:
         raise ValueError(f"unknown engine: {engine}")
     # empty temp cwd: the CLI doesn't load this repo's files/instructions. NOT a security boundary

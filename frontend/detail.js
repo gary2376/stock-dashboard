@@ -297,7 +297,7 @@ function shell(s) {
   </section>
 
   <div class="panel" id="investmentAnalysisPanel">
-    <h3>投資分析${a.ticker ? "" : "（尚未產生，等候Codex背景產生或執行 scripts/generate_analysis.py）"}</h3>
+    <h3>投資分析${a.ticker ? "" : "（尚未產生，等候 AI 背景產生，或執行 scripts/generate_analysis.py）"}</h3>
     ${analysisAsOfHtml(a.as_of)}
     <div class="analysis-score-section">
       <h4>五面向評分</h4>

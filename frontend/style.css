@@ -419,6 +419,48 @@ select, .range-btn {
   text-align: center;
 }
 
+.first-run-empty {
+  grid-column: 1 / -1;
+  width: min(680px, 100%);
+  margin: 8px auto 0;
+  padding: 28px;
+  color: var(--text-secondary);
+  text-align: left;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+}
+
+.first-run-empty h2 {
+  margin: 0 0 16px;
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+.first-run-empty ol {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.first-run-empty li {
+  padding-left: 4px;
+  line-height: 1.65;
+}
+
+.first-run-empty li + li { margin-top: 8px; }
+
+.first-run-empty code {
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+}
+
+.first-run-focus-btn { margin-top: 20px; }
+
+@media (max-width: 560px) {
+  .first-run-empty { padding: 22px 18px; }
+  .first-run-focus-btn { width: 100%; }
+}
+
 /* detail page */
 .detail-wrap {
   max-width: 980px;

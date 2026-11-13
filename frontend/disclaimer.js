@@ -41,7 +41,7 @@
     const message = element(
       "p",
       "consent-dialog-message",
-      "您的持倉、策略筆記與分析內容會傳送至您本人已登入的 Claude／Codex CLI 所使用的 AI 服務。分析內容由 AI 產生，不構成投資建議。",
+      "您的持倉、策略筆記與分析內容會傳送至您自己設定的 AI（已登入的 Claude／Codex CLI，或您設定的其他 AI 服務；使用雲端 API 時資料會送到該供應商，本機模型則不會離開您的電腦）。分析內容由 AI 產生，不構成投資建議。",
     );
     const confirmButton = element("button", "consent-confirm-btn", "我已了解並同意");
 

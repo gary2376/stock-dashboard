@@ -9,6 +9,11 @@
       readySelector: "#grid .card, #grid .empty",
       steps: [
         {
+          selector: "#grid .first-run-empty",
+          title: "從第一檔股票開始",
+          text: "依照這三個步驟新增股票，或先開啟示範模式熟悉畫面。下方按鈕可以直接把游標移到新增欄位。",
+        },
+        {
           selector: "#grid .card",
           title: "觀察清單卡片",
           text: "每張卡片濃縮股價位階、獲利檢查與結論。先用卡片快速篩選，再點進去看完整依據。",

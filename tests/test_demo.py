@@ -290,7 +290,7 @@ def served(demo, tmp_path_factory):
 
 
 def test_demo_serves_everything_offline(served):
-    assert served["demo"] is True and served["info"] == {"demo": True, "version": "4.2"}
+    assert served["demo"] is True and {k: served["info"][k] for k in ("demo", "version")} == {"demo": True, "version": "4.2"} and "engine" in served["info"]
     assert [c[0] for c in served["cards"]] == TICKERS
     assert all(c[1].startswith("示範公司") and c[2] and c[3] for c in served["cards"])
     assert [c[4] for c in served["cards"]] == [True, True, False, False, False]
@@ -395,7 +395,8 @@ def test_not_blocked_outside_demo(client, monkeypatch, method, url, body):
 def test_info_flag(client, monkeypatch):
     c, d = client
     monkeypatch.setattr(config, "DEMO", False)
-    assert c.get("/api/info").json() == {"demo": False, "version": "4.2"}
+    j = c.get("/api/info").json()
+    assert j["demo"] is False and j["version"] == "4.2" and set(j["engine"]) == {"name", "available", "privacy", "host"}
     monkeypatch.setattr(config, "DEMO", True)
     assert c.get("/api/info").json()["demo"] is True
 

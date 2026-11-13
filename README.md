@@ -66,6 +66,19 @@ flowchart LR
 - 技術面與大盤分數、護欄、釘選規則都是**程式計算**；只有「從筆記挑出適用規則並對照事實」這一步由 AI 做，而且結果要通過上面的驗證。
 - 詳細設計取捨見 [docs/DESIGN.md](docs/DESIGN.md)。
 
+## 沒有 Claude 或 Codex 也能用
+
+AI 功能支援四種引擎，只要有一種就行：
+
+| 引擎 | 需要什麼 | 適用 |
+|---|---|---|
+| `claude` | 登入的 [Claude Code](https://github.com/anthropics/claude-code) CLI | 預設之一 |
+| `codex` | 登入的 [Codex CLI](https://github.com/openai/codex) | 預設之一 |
+| `openai` | 任何 OpenAI 相容 API：`LLM_BASE_URL`、`LLM_MODEL`、`LLM_API_KEY` | Grok（xAI）、Gemini、OpenRouter、本機 Ollama／LM Studio |
+| `command` | 任何「從標準輸入讀提示詞、輸出答案」的命令列工具：`LLM_COMMAND` | 其他 CLI |
+
+例如用 Grok：`LLM_BASE_URL=https://api.x.ai/v1 LLM_MODEL=<模型> LLM_API_KEY=<金鑰> ./scripts/run_local.sh`。完整設定、隱私與模型品質的注意事項見 [docs/ENGINES.md](docs/ENGINES.md)。
+
 ## 在自己的電腦上使用真實資料
 
 ```bash
@@ -73,14 +86,14 @@ cd backend && pip install -r requirements.txt && cd ..
 ./scripts/run_local.sh               # http://127.0.0.1:8013 ，只綁本機
 ```
 
-- 需要（選用）登入好的 [Claude Code](https://github.com/anthropics/claude-code) 或 [Codex CLI](https://github.com/openai/codex) 才能用 AI 功能。
-- 把你的筆記（`.md`／`.txt`）放進網頁「策略筆記」或 `data/strategy/`；在個股頁輸入持倉；按「更新基本面分析」。
+- AI 功能需要上面四種引擎之一；沒有也能用圖表、持倉、釘選規則（由程式判斷、不需 AI）與示範模式。
+- 第一次打開是空的：在首頁輸入代號按「新增」；把你的筆記（`.md`／`.txt`）放進網頁「策略筆記」；在個股頁輸入持倉；按「更新基本面分析」。想先看畫面，先跑示範模式。
 - 想從手機連：用 `scripts/run_tailscale.sh`（只綁 Tailscale 網卡）。**不要**用 `--host 0.0.0.0`，這個服務沒有登入驗證。
 
 ## 資料與隱私
 
 - 你的觀察清單、持倉、筆記、分析、聊天紀錄都在 `data/`（已加入 `.gitignore`），不會被 commit。
-- 持倉與分析內容會在你執行 AI 功能時，送到**你自己登入的** AI 服務（Claude 或 OpenAI）。第一次使用會顯示同意視窗。
+- 持倉與分析內容會在你執行 AI 功能時，送到**你自己設定的** AI（Claude、OpenAI 或你選的 API 供應商；使用本機 Ollama 則不離開電腦）。第一次使用會顯示同意視窗。
 - `claude` 的呼叫已關閉工具、外掛與 MCP；`codex` 以唯讀沙盒執行，但**不是**安全邊界（它仍可讀取整個檔案系統）。詳見 [SECURITY.md](SECURITY.md)。
 - 每次 AI 呼叫的 token 與等效費用記在 `data/llm_usage.jsonl`。實測：完整分析約 0.15 USD、策略檢查約 0.13 USD（API 等值，訂閱方案不一定實際計費）。
 

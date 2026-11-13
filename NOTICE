@@ -3,10 +3,11 @@ Copyright (c) 2026 gary2376 — MIT 授權（見 LICENSE）
 
 本專案使用的第三方軟體與服務：
 
-- TradingView Lightweight Charts（Apache License 2.0）— https://www.tradingview.com/
+- TradingView Lightweight Charts v4.2.3（Apache License 2.0）— https://www.tradingview.com/
+  已隨專案放在 frontend/vendor/（含授權檔 LICENSE-lightweight-charts.txt 與 NOTICE-lightweight-charts.txt），不從 CDN 載入。
   個股頁的圖表由 TradingView Lightweight Charts 繪製。圖表上的 TradingView 標誌與頁尾連結會保持顯示；
   若你重新散布本專案，請保留這項聲明。確切的聲明文字請以你所用版本隨附的 NOTICE 檔為準。
-- Chart.js（MIT）— https://www.chartjs.org/
+- Chart.js v4.4.7（MIT）— https://www.chartjs.org/（已放在 frontend/vendor/，授權檔 LICENSE-chartjs.txt）
 - FastAPI、Uvicorn、Pydantic、pandas、requests、lxml（MIT／BSD 類授權）
 - yfinance（Apache License 2.0）— 讀取 Yahoo 公開資料的社群函式庫。Yahoo 的條款限制資料僅供個人使用；
   本專案僅供個人、非商業使用。
