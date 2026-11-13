@@ -1,47 +1,40 @@
-# Design decisions
+# 設計決策
 
-Why the system is built the way it is. Each entry: the problem, the decision, the alternative rejected, and what it costs.
+說明這個系統為什麼這樣設計。每一項包含：要解決的問題、做的決定、被捨棄的替代方案，以及代價。
 
-## 1. Code decides what it can; the model only does what code cannot
-LLMs are unreliable at comparisons and arithmetic (this project saw it repeatedly). Technical and market scores, score caps,
-pinned-rule verdicts and every number shown as evidence are computed by code. The model is used for the one thing code cannot
-do: choosing which of the user's note rules apply to the stock now and phrasing the comparison.
-*Rejected:* letting the model produce scores and explain them — explanations drifted from the numbers.
-*Cost:* more code, rules that a human has to maintain.
+## 1. 程式能決定的就交給程式，模型只做程式做不到的事
+LLM 不擅長比較與算術（這個專案多次證實）。技術面與大盤分數、分數上限、釘選規則的判斷，以及所有當作證據顯示的數字，都由程式計算。
+模型只負責程式做不到的事：從使用者的筆記中挑出「現在適用」的規則，並整理成對照。
+*捨棄的作法：* 讓模型自己打分數再解釋——解釋會逐漸偏離數字。
+*代價：* 程式碼變多，規則需要人維護。
 
-## 2. Verify what can be verified, and never claim more
-A strategy-check row is kept only if its quote exists verbatim and **uniquely** across all notes (NFKC, punctuation and negation
-preserved, minimum information length), its fact references exist in a registry, and its evidence text is regenerated from that
-registry. Pass/fail itself stays the model's judgement and is labelled so. Quotes that merely exist are not "proof the rule is met".
-*Rejected:* stripping punctuation before matching (glues neighbouring cells into sentences that never existed).
+## 2. 能驗證的就驗證，而且不宣稱超過驗證的範圍
+策略檢查的每一列，只有在以下都成立時才保留：引文逐字存在於筆記且在**所有筆記中唯一**（NFKC 正規化，保留標點與否定詞，並有最低資訊量）、
+事實引用存在於事實表、證據文字由事實表重新產生。通過／未通過本身仍是模型的判斷，並且明確標示。引文存在不等於「證明規則成立」。
+*捨棄的作法：* 比對前先刪除標點（會把相鄰儲存格黏成從未存在過的句子）。
 
-## 3. Point-in-time facts for past actions
-Judging a past buy with today's data is hindsight. Each buy gets `BUY<n>.*` facts computed from bars strictly **before** the buy
-date; rows scoped "entry" may cite only those; code removes foreign references and downgrades verdicts without evidence.
-Fundamentals, news and market state at that time are not reconstructable, so they are marked unavailable instead of invented.
+## 3. 過去的行為只用當時的事實判斷
+用今天的資料評價過去的買入，是事後諸葛。每一筆買入都有 `BUY<n>.*` 事實，只用**買入日之前**的 K 棒計算；「買入當時」的規則只能引用這些事實，
+程式會移除不屬於該範圍的引用，並把沒有證據的判斷降為未知。當時的財報、新聞、大盤無法重建，所以標為不可得，而不是編造。
 
-## 4. Pinned rules: compile once, confirm, then evaluate deterministically
-Users type free text. A local template (strict about < vs ≤) or a one-off LLM compile turns it into a tiny expression language
-(no `eval`, comparisons and and/or only, unit-checked, three-valued logic, limits on size/depth/facts). The restatement shown for
-confirmation is **generated from the AST**, never from the model, so a manipulated compile cannot show a reassuring but wrong
-explanation. Stale detection covers text edits, registry changes and compiler version. IDs never change, so batch columns stay stable.
-*Rejected:* running the LLM on every pin every time (cost, drift, unverifiable) and a plugin/DSL system for users.
+## 4. 釘選規則：編譯一次、使用者確認、之後由程式判斷
+使用者輸入自由文字。本地範本（嚴格區分 < 與 ≤）或一次性的 LLM 編譯，把它轉成很小的運算式語言（沒有 `eval`，只有比較與且／或，檢查單位，三值邏輯，並限制長度、深度與事實數）。
+供使用者確認的白話解讀**由運算式產生**，不是由模型寫的，所以被操縱的編譯結果無法顯示一段看似合理、實際相反的說明。
+過期偵測涵蓋文字修改、事實表改版與編譯器版本。規則 ID 永不改變，所以批次總覽的欄位保持穩定。
+*捨棄的作法：* 每次都讓 LLM 解讀每條規則（成本、漂移、無法驗證），以及給使用者用的外掛／DSL 系統。
 
-## 5. Safe defaults for a tool that sees holdings
-Localhost by default, no auth but an origin check, atomic writes, per-ticker locks, transactional import with automatic backup,
-size/rate limits, a consent dialog before data leaves the machine, an LLM CLI invoked without tools/plugins/MCP.
-Honest limits are documented in SECURITY.md rather than implied away.
+## 5. 一個會看到持倉的工具，預設就要安全
+預設只綁本機、沒有登入但有來源檢查、原子寫入、每檔股票的鎖、交易式匯入與自動備份、大小與次數限制、資料離開電腦前的同意視窗、不開工具／外掛／MCP 的 LLM CLI 呼叫。
+誠實的限制寫在 SECURITY.md，不假裝已經解決。
 
-## 6. Cost awareness
-`claude -p` loads the user's global config by default (about 66k input tokens for "hi"); the app disables it (about 2.7k). Every call is
-logged with tokens and cost. Measured: ≈ $0.15 per analysis, ≈ $0.13 per strategy check (API-equivalent).
+## 6. 成本意識
+`claude -p` 預設會載入使用者的全域設定（光一句 "hi" 就約 6.6 萬輸入 token），本系統把它關掉（約 2.7 千）。每次呼叫都記錄 token 與費用。
+實測：完整分析約 0.15 美元、策略檢查約 0.13 美元（API 等值）。
 
-## 7. Evidence discipline
-Scores have **no backtest evidence** of predictive power. The technical axis was backtested point-in-time on cached history
-(`scripts/backtest_technical.py`; leave-one-out same-market excess return); no significant effect. The UI and README say so.
-Analysis snapshots are stored immutably so the LLM-judged axes can be evaluated forward over time.
+## 7. 證據紀律
+分數**沒有回測證據**顯示有預測力。技術面用快取的歷史價格做了「只用當時資料」的回測（`scripts/backtest_technical.py`；與同市場其他股票相比的超額報酬），沒有顯著效果。介面與 README 都明講這一點。
+分析快照以不可變的方式保存，之後能對 LLM 判斷的軸做前瞻評估。
 
-## How it was reviewed
-Backend and frontend changes were red-teamed by a second model in several rounds (race conditions, injection, lookahead,
-unit mixing, stale state), with findings fixed and regression-tested; UI behaviour was verified in a real browser (Playwright).
-The test suite (400+ tests) runs offline.
+## 如何審查
+後端與前端的變更都由第二個模型多輪紅隊審查（競態、注入、事後偏誤、單位混用、過期狀態），發現的問題都修正並加上回歸測試；介面行為用真實瀏覽器（Playwright）驗證。
+測試（400 多個）離線即可執行。

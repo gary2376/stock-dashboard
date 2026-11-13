@@ -1,4 +1,4 @@
-<!-- Optional extra rules appended to the analysis prompt (under "使用者額外規則").
-     Plain text/markdown. They steer the model's wording and emphasis; they can NOT override the
-     score caps in profile.json — those run in code after the model answers.
-     Leave this file empty to use only the built-in skeptical rules. -->
+<!-- 附加至分析提示詞的選用額外規則（位於「使用者額外規則」下方）。
+     純文字／markdown。這些規則會引導模型的措辭與著重點；但無法覆寫
+     profile.json 中的分數上限——模型回答後，這些上限會在程式碼中套用。
+     將此檔案留白，即可只使用內建的懷疑性規則。 -->

@@ -1,17 +1,16 @@
 Stock Dashboard
-Copyright (c) 2026 gary2376 — MIT License (see LICENSE)
+Copyright (c) 2026 gary2376 — MIT 授權（見 LICENSE）
 
-Third-party software and services used by this project:
+本專案使用的第三方軟體與服務：
 
-- TradingView Lightweight Charts (Apache License 2.0) — https://www.tradingview.com/
-  Charts on the detail page are created with TradingView Lightweight Charts. The TradingView logo/link is
-  kept visible on the chart and in the page footer. Please keep this attribution if you redistribute.
-  Check the NOTICE file shipped with the library version you use for the exact wording.
-- Chart.js (MIT) — https://www.chartjs.org/
-- FastAPI, Uvicorn, Pydantic, pandas, requests, lxml (MIT/BSD-style licenses)
-- yfinance (Apache License 2.0) — a community library that reads data published by Yahoo!. Yahoo's terms
-  restrict the data to personal use; this project is intended for personal, non-commercial use only.
-- Google News / Yahoo RSS feeds are fetched for headlines under their own terms (personal, non-commercial).
+- TradingView Lightweight Charts（Apache License 2.0）— https://www.tradingview.com/
+  個股頁的圖表由 TradingView Lightweight Charts 繪製。圖表上的 TradingView 標誌與頁尾連結會保持顯示；
+  若你重新散布本專案，請保留這項聲明。確切的聲明文字請以你所用版本隨附的 NOTICE 檔為準。
+- Chart.js（MIT）— https://www.chartjs.org/
+- FastAPI、Uvicorn、Pydantic、pandas、requests、lxml（MIT／BSD 類授權）
+- yfinance（Apache License 2.0）— 讀取 Yahoo 公開資料的社群函式庫。Yahoo 的條款限制資料僅供個人使用；
+  本專案僅供個人、非商業使用。
+- Google News／Yahoo RSS 的標題依其各自條款（個人、非商業）取得。
 
-The demo dataset (scripts/load_demo.py) is entirely synthetic and fictional. No real market data is bundled.
-This project is not affiliated with or endorsed by TradingView, Yahoo, Google, Anthropic or OpenAI.
+示範資料集（scripts/load_demo.py）完全是合成、虛構的，專案不內含任何真實行情資料。
+本專案與 TradingView、Yahoo、Google、Anthropic、OpenAI 皆無隸屬或背書關係。

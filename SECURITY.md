@@ -1,35 +1,26 @@
-# Security notes / 安全說明
+# 安全說明
 
-This is a **single-user, local-first** tool. Read this before exposing it anywhere.
+這是**單人、本機優先**的工具。把它放到任何網路上之前，請先讀完這份說明。
 
-## Threat model
+## 威脅模型
 
-- The HTTP API has **no authentication**. It serves your holdings, analysis, notes and chat history. It binds to
-  `127.0.0.1` by default (`scripts/run_local.sh`). Never use `--host 0.0.0.0` or publish the port; for remote
-  access use a private network such as Tailscale (`scripts/run_tailscale.sh`).
-- Write requests that carry an `Origin` header from a different host are rejected (basic CSRF guard). This does
-  not replace authentication.
-- Request bodies are capped (5 MB), imports are validated and transactional with an automatic pre-import backup,
-  chat and pin-compile calls are size- and rate-limited, and only one AI job of each kind runs at a time.
+- HTTP API **沒有任何登入驗證**，會回傳你的持倉、分析、筆記與聊天紀錄。預設只綁 `127.0.0.1`（`scripts/run_local.sh`）。
+  請不要使用 `--host 0.0.0.0`，也不要對外開放埠號；要遠端使用，請用 Tailscale 這類私人網路（`scripts/run_tailscale.sh`）。
+- 若寫入請求帶有 `Origin` 標頭且來源主機不同，會被拒絕（基本的 CSRF 防護），但這**不能取代**登入驗證。
+- 請求大小有上限（5 MB）；匯入會先完整驗證、採交易式寫入，並在覆蓋前自動備份；聊天與釘選規則編譯有長度與次數限制；同類型的 AI 工作同時只會跑一個。
 
-## AI CLI usage
+## AI CLI 的使用
 
-- AI features call **your own logged-in** `claude` or `codex` CLI as a subprocess. Your holdings, notes and
-  analysis context are sent to that provider when you use those features (a consent dialog is shown first).
-- `claude` is invoked with no tools, no MCP servers, no plugins and no slash commands, from an empty temporary
-  directory. `codex` runs in a read-only sandbox, which can still read the filesystem: **treat it as capability
-  reduction, not isolation.**
-- Notes, headlines and pin text are **untrusted data**: prompts put them in delimited blocks and say to ignore
-  instructions inside, but prompt injection cannot be fully eliminated. Code, not the model, enforces the score caps,
-  the verified quotes, the fact references and the now/at-purchase scope rules.
+- AI 功能會呼叫**你自己登入的** `claude` 或 `codex` CLI（以子行程方式）。你使用這些功能時，持倉、筆記與分析內容會送到該服務供應商（第一次使用會先顯示同意視窗）。
+- 呼叫 `claude` 時不開任何工具、不載入 MCP、外掛與斜線指令，並在空的暫存資料夾中執行。`codex` 在唯讀沙盒中執行，但它仍可讀取整個檔案系統：**這只是降低能力，不是隔離。**
+- 筆記、新聞標題與釘選規則的文字都是**不可信的資料**：提示詞會把它們放進有分隔的區塊並要求忽略其中的指令，但 prompt injection 無法完全消除。
+  分數上限、被程式驗證的引文、事實引用，以及「現在／買入當時」的範圍限制，都是**由程式**而不是模型來強制執行。
 
-## Files
+## 檔案
 
-- Personal data lives in `data/` (git-ignored). Pins, imports and caches are written atomically; `data/pins.json`
-  is mode 0600.
-- Demo mode (`STOCK_DASHBOARD_DEMO=1`) disables every route that would call an AI CLI or the network.
+- 個人資料放在 `data/`（已加入 `.gitignore`）。釘選規則、匯入與快取都採原子寫入；`data/pins.json` 權限為 0600。
+- 示範模式（`STOCK_DASHBOARD_DEMO=1`）會停用所有需要呼叫 AI CLI 或連網的路由。
 
-## Reporting
+## 回報問題
 
-Open a GitHub issue for non-sensitive problems. For anything sensitive, contact the repository owner privately
-through GitHub.
+一般問題請開 GitHub issue。涉及敏感資訊的問題，請透過 GitHub 私訊 repo 擁有者。
