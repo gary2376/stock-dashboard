@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import os
+import statistics
 import stat
 import subprocess
 import sys
@@ -38,6 +39,7 @@ import config
 import llm_engines
 import llm_usage
 import pins
+import seed
 import strategy
 import strategy_batch
 import strategy_runner
@@ -97,6 +99,12 @@ async def same_origin_writes(request: Request, call_next):
     return await call_next(request)
 
 
+@app.on_event("startup")
+def _first_run_seed():
+    """Only the real server start (not a bare TestClient) seeds a brand-new data dir; see backend/seed.py."""
+    seed.maybe_seed()
+
+
 @app.get("/api/info")
 def info():
     return {"demo": config.DEMO, "version": "4.2", "engine": llm_engines.info()}
@@ -107,16 +115,17 @@ def info():
 # so the request returns immediately; the frontend polls /api/refresh/status.
 _refresh_state = {
     "prices": {"running": False, "last_run": None, "last_result": None, "success": None},
-    "analysis": {"running": False, "last_run": None, "last_result": None, "success": None},
+    "analysis": {"running": False, "last_run": None, "last_result": None, "success": None,
+                 "tickers": None, "started_at": None},  # tickers: this/last run's list, None = all
 }
 _refresh_lock = threading.Lock()
 
 
-def _run_refresh(kind: str, script: str, timeout: int):
+def _run_refresh(kind: str, script: str, timeout: int, args=()):
     success = False
     try:
         result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / script)],
+            [sys.executable, str(ROOT / "scripts" / script), *args],
             cwd=ROOT, capture_output=True, text=True, timeout=timeout,
         )
         lines = [l for l in result.stdout.strip().splitlines() if l]
@@ -133,12 +142,15 @@ def _run_refresh(kind: str, script: str, timeout: int):
         _refresh_state[kind]["success"] = success
 
 
-def _start_refresh(kind: str, script: str, timeout: int):
+def _start_refresh(kind: str, script: str, timeout: int, args=()):
     with _refresh_lock:
         if _refresh_state[kind]["running"]:
             raise HTTPException(409, "已經在更新中，稍等一下")
         _refresh_state[kind]["running"] = True
-    threading.Thread(target=_run_refresh, args=(kind, script, timeout), daemon=True).start()
+        if "tickers" in _refresh_state[kind]:
+            _refresh_state[kind]["tickers"] = list(args) or None
+            _refresh_state[kind]["started_at"] = datetime.now().isoformat(timespec="seconds")
+    threading.Thread(target=_run_refresh, args=(kind, script, timeout, tuple(args)), daemon=True).start()
 
 
 def _tickers() -> list[str]:
@@ -1030,11 +1042,47 @@ def refresh_prices():
     return {"status": "started"}
 
 
+class RefreshAnalysisIn(BaseModel):
+    tickers: Optional[list] = None
+
+
+MAX_REFRESH_TICKERS = 20
+
+
 @app.post("/api/refresh/analysis")
-def refresh_analysis():
+def refresh_analysis(body: Optional[RefreshAnalysisIn] = None):
+    """Optional {"tickers": [...]} limits the run to those watchlist tickers; no body = every ticker."""
     _demo_block()
-    _start_refresh("analysis", "generate_analysis.py", timeout=5400)
-    return {"status": "started"}
+    chosen: list = []
+    if body is not None and body.tickers is not None:
+        if not isinstance(body.tickers, list) or not all(isinstance(t, str) for t in body.tickers):
+            raise HTTPException(400, "tickers 必須是代號字串的清單")
+        chosen = list(dict.fromkeys(t.strip().upper() for t in body.tickers))
+        if len(chosen) > MAX_REFRESH_TICKERS:
+            raise HTTPException(400, f"一次最多更新 {MAX_REFRESH_TICKERS} 檔")
+        bad = [t for t in chosen if not dp.is_valid_ticker(t)]
+        if bad:
+            raise HTTPException(400, f"無效的股票代號：{', '.join(bad)}")
+        watch = _tickers()
+        missing = [t for t in chosen if t not in watch]
+        if missing:
+            raise HTTPException(400, f"不在觀察清單：{', '.join(missing)}")
+    try:
+        ga.pick_engine()  # no AI engine: say so now instead of starting a doomed subprocess
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    _start_refresh("analysis", "generate_analysis.py", timeout=5400, args=chosen)
+    return {"status": "started", "tickers": chosen or None}
+
+
+@app.get("/api/analysis/cost-hint")
+def analysis_cost_hint():
+    """Typical cost/time of one ticker's analysis from the last 20 logged analysis calls (numbers only)."""
+    rows = [r for r in llm_usage.recent_rows() if r["tag"].startswith("analysis:") and r["ok"]][-20:]
+    usd = [r["cost_usd"] for r in rows if r["cost_usd"] is not None]
+    secs = [r["seconds"] for r in rows if r["seconds"]]
+    return {"per_ticker_usd": round(statistics.median(usd), 4) if usd else None,
+            "per_ticker_seconds": round(statistics.median(secs), 1) if secs else None, "based_on": len(rows)}
 
 
 def _latest_mtime(dir_path: Path) -> str | None:

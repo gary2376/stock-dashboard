@@ -41,7 +41,12 @@
         {
           selector: "#refreshAnalysisBtn",
           title: "更新基本面分析",
-          text: "重新整理財報、估值與 AI 分析。公司事實會變，舊結論也要定期重看。",
+          text: "重新整理財報、估值與 AI 分析。公司事實會變，舊結論也要定期重看。按下前會顯示預估成本與檔數。",
+        },
+        {
+          selector: "#selectModeBtn",
+          title: "只更新選到的股票",
+          text: "全部更新很費時也花額度。開啟選擇模式後，在卡片上勾選想重看的股票（最多 20 檔），再按下方的「更新所選分析」，只會呼叫這幾檔的 AI。",
         },
         {
           selector: "#backupControls",
@@ -122,6 +127,11 @@
           selector: "#holdingPanel",
           title: "我的持倉與交易批次",
           text: "輸入買入日期、均價與選填股數；每次買入會保留成一批，方便計算平均成本與組合損益。",
+        },
+        {
+          selector: "#refreshStockAnalysisBtn",
+          title: "更新這檔的分析",
+          text: "只重新產生這一檔的 AI 分析，旁邊會顯示預估成本與時間；更新期間按鈕會停用，完成後頁面自動重新載入。",
         },
         {
           selector: "#investmentAnalysisPanel",

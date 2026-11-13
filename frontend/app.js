@@ -18,6 +18,17 @@ const importBackupBtn = document.getElementById("importBackupBtn");
 const importBackupFile = document.getElementById("importBackupFile");
 const backupStatus = document.getElementById("backupStatus");
 const firstRunEmptyTemplate = document.getElementById("firstRunEmptyTemplate");
+const selectModeBtn = document.getElementById("selectModeBtn");
+const selectionBar = document.getElementById("selectionBar");
+const selectionCount = document.getElementById("selectionCount");
+const selectionNote = document.getElementById("selectionNote");
+const refreshSelectedBtn = document.getElementById("refreshSelectedBtn");
+const cancelSelectionBtn = document.getElementById("cancelSelectionBtn");
+const MAX_SELECTED = 20;
+let selectionMode = false;
+const selectedTickers = new Set();
+let analysisRunning = false;
+let knownTickerCount = 0;
 let marketFilter = "all";
 let searchQuery = "";
 let sortDir = "asc";
@@ -27,7 +38,7 @@ const wasRunning = { prices: false, analysis: false };
 
 function applyDemoControls() {
   if (!demoMode) return;
-  [addTickerBtn, refreshPricesBtn, refreshAnalysisBtn].forEach(button => {
+  [addTickerBtn, refreshPricesBtn, refreshAnalysisBtn, selectModeBtn, refreshSelectedBtn].forEach(button => {
     if (!button) return;
     button.disabled = true;
     button.title = "示範模式：此功能已停用";
@@ -70,8 +81,13 @@ function updateRefreshUI(kind, state) {
   const btn = kind === "prices" ? refreshPricesBtn : refreshAnalysisBtn;
   const label = kind === "prices" ? refreshPricesStatus : refreshAnalysisStatus;
   btn.disabled = demoMode || state.running;
+  if (kind === "analysis") {
+    analysisRunning = Boolean(state.running);
+    updateSelectionBar();
+  }
   if (state.running) {
-    label.textContent = "更新中…";
+    label.textContent = kind === "analysis" && Array.isArray(state.tickers) && state.tickers.length
+      ? `更新中（${state.tickers.length} 檔）…` : "更新中…";
     label.classList.remove("error");
   } else {
     const failed = state.success === false;
@@ -109,16 +125,68 @@ async function pollRefreshStatus() {
   }
 }
 
-async function triggerRefresh(kind) {
+async function fetchCostHint() {
+  try {
+    const res = await fetch("/api/analysis/cost-hint");
+    return res.ok ? await res.json() : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// "預估約 $X、約 N 秒" for n tickers, or the generic text when there is no usage history yet
+function costHintText(hint, n) {
+  const parts = [];
+  if (hint && typeof hint.per_ticker_usd === "number") parts.push(`約 $${(hint.per_ticker_usd * n).toFixed(2)}`);
+  if (hint && typeof hint.per_ticker_seconds === "number") parts.push(`約 ${Math.round(hint.per_ticker_seconds * n)} 秒`);
+  return parts.length ? `預估${parts.join("、")}（依你的 AI 而定）` : `每檔會呼叫一次 AI（共 ${n} 次）`;
+}
+
+async function triggerRefresh(kind, tickers = null) {
   if (demoMode) return;
-  const res = await fetch(`/api/refresh/${kind}`, { method: "POST" });
-  const data = await res.json();
+  const options = { method: "POST" };
+  if (kind === "analysis") {
+    const n = tickers ? tickers.length : knownTickerCount;
+    const hintText = costHintText(await fetchCostHint(), n);
+    const scope = tickers ? `所選 ${n} 檔` : `全部 ${n} 檔`;
+    if (!confirm(`將更新${scope}的 AI 分析。\n${hintText}\n確定嗎？`)) return;
+    if (tickers) {
+      options.headers = { "Content-Type": "application/json" };
+      options.body = JSON.stringify({ tickers });
+    }
+  }
+  const res = await fetch(`/api/refresh/${kind}`, options);
+  let data = {};
+  try { data = await res.json(); } catch (_) { /* non-JSON error body */ }
   if (!res.ok) {
-    showStatus(`${kind === "prices" ? "股價" : "基本面分析"}更新無法啟動：${data.detail || res.status}`, true);
+    const hint = res.status === 503 ? "（設定方式見 docs/ENGINES.md）" : "";
+    showStatus(`${kind === "prices" ? "股價" : "基本面分析"}更新無法啟動：${data.detail || res.status}${hint}`, true);
     return;
   }
   showStatus(`${kind === "prices" ? "股價" : "基本面分析"}開始更新…`);
+  if (tickers) setSelectionMode(false);
   pollRefreshStatus();
+}
+
+function updateSelectionBar() {
+  if (!selectionBar) return;
+  selectionBar.hidden = !selectionMode;
+  const n = selectedTickers.size;
+  selectionCount.textContent = `已選 ${n} 檔`;
+  selectionNote.textContent = n >= MAX_SELECTED ? `最多一次選 ${MAX_SELECTED} 檔` : (analysisRunning ? "已有分析更新在執行中，完成後才能再按" : "");
+  refreshSelectedBtn.disabled = demoMode || analysisRunning || n === 0;
+  grid.querySelectorAll(".card-select-input").forEach(input => {
+    input.disabled = !input.checked && n >= MAX_SELECTED;
+  });
+}
+
+function setSelectionMode(on) {
+  selectionMode = on;
+  if (!on) selectedTickers.clear();
+  selectModeBtn.setAttribute("aria-pressed", String(on));
+  selectModeBtn.textContent = on ? "✕ 結束選擇" : "☑ 選擇股票更新分析";
+  load();
+  updateSelectionBar();
 }
 
 function fmtPct(v, digits = 1) {
@@ -213,7 +281,8 @@ function renderCard(s, range) {
   const verdict = escapeHtml(a.verdict || (bothPass ? "兩關都過" : "待觀察"));
   const dayChangeCls = (s.day_change_pct ?? 0) < 0 ? "tag high" : "tag low";
   return `
-  <article class="card ${s.favorite ? "favorited" : ""}" data-ticker="${s.ticker}">
+  <article class="card ${s.favorite ? "favorited" : ""} ${selectedTickers.has(s.ticker) ? "selected" : ""}" data-ticker="${s.ticker}">
+    ${selectionMode ? `<label class="card-select"><input type="checkbox" class="card-select-input" data-ticker="${escapeHtml(s.ticker)}" ${selectedTickers.has(s.ticker) ? "checked" : ""} aria-label="選取 ${escapeHtml(s.name)} 更新分析"> 選取</label>` : ""}
     <div class="card-icons">
       <button class="star-btn ${s.favorite ? "active" : ""}" data-ticker="${s.ticker}" data-favorite="${s.favorite}" title="${s.favorite ? "取消關注" : "特別關注（置頂）"}">${s.favorite ? "★" : "☆"}</button>
       <button class="remove-btn" data-ticker="${s.ticker}" title="移除">✕</button>
@@ -272,6 +341,8 @@ async function load() {
   const range = rangeSelect.value;
   const res = await fetch(`/api/stocks?range=${range}`);
   const allStocks = await res.json();
+  knownTickerCount = allStocks.length;
+  for (const t of [...selectedTickers]) if (!allStocks.some(s => s.ticker === t)) selectedTickers.delete(t);
   if (!allStocks.length) {
     renderFirstRunEmptyState();
     return;
@@ -290,10 +361,22 @@ async function load() {
   const sorted = applySort(stocks);
   grid.innerHTML = sorted.map(s => renderCard(s, range)).join("");
   grid.querySelectorAll(".card").forEach(el => {
-    el.addEventListener("click", () => {
+    el.addEventListener("click", (e) => {
+      if (e.target.closest(".card-select")) return;  // the selection checkbox never navigates
       window.location.href = `detail.html?ticker=${el.dataset.ticker}`;
     });
   });
+  grid.querySelectorAll(".card-select-input").forEach(input => {
+    input.addEventListener("change", () => {
+      const t = input.dataset.ticker;
+      if (input.checked && selectedTickers.size < MAX_SELECTED) selectedTickers.add(t);
+      else selectedTickers.delete(t);
+      input.checked = selectedTickers.has(t);
+      input.closest(".card").classList.toggle("selected", input.checked);
+      updateSelectionBar();
+    });
+  });
+  updateSelectionBar();
   grid.querySelectorAll(".remove-btn").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
@@ -410,6 +493,11 @@ marketFilterBtns.querySelectorAll("button").forEach(btn => {
 });
 refreshPricesBtn.addEventListener("click", () => triggerRefresh("prices"));
 refreshAnalysisBtn.addEventListener("click", () => triggerRefresh("analysis"));
+selectModeBtn.addEventListener("click", () => setSelectionMode(!selectionMode));
+cancelSelectionBtn.addEventListener("click", () => setSelectionMode(false));
+refreshSelectedBtn.addEventListener("click", () => {
+  if (selectedTickers.size) triggerRefresh("analysis", [...selectedTickers]);
+});
 sortSelect.addEventListener("change", load);
 sortDirBtn.addEventListener("click", () => {
   sortDir = sortDir === "asc" ? "desc" : "asc";

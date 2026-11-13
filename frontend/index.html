@@ -62,6 +62,9 @@
       <button id="refreshAnalysisBtn" class="action-btn">🧠 更新基本面分析</button>
       <span class="refresh-status" id="refreshAnalysisStatus">尚未更新過</span>
     </div>
+    <div class="refresh-item">
+      <button id="selectModeBtn" class="action-btn" type="button" aria-pressed="false">☑ 選擇股票更新分析</button>
+    </div>
   </div>
   <div class="refresh-row-group" id="backupControls">
     <div class="refresh-item">
@@ -89,6 +92,12 @@
     <button type="button" class="action-btn first-run-focus-btn">把游標移到上方輸入框</button>
   </section>
 </template>
+<div id="selectionBar" class="selection-bar" role="region" aria-label="已選股票更新分析" hidden>
+  <span id="selectionCount" class="selection-count" aria-live="polite">已選 0 檔</span>
+  <span id="selectionNote" class="selection-note"></span>
+  <button id="refreshSelectedBtn" class="action-btn" type="button" disabled>更新所選分析</button>
+  <button id="cancelSelectionBtn" class="range-btn" type="button">取消</button>
+</div>
 <script src="app.js"></script>
 <script src="chat-widget.js"></script>
 </body>

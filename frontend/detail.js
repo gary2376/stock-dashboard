@@ -297,7 +297,12 @@ function shell(s) {
   </section>
 
   <div class="panel" id="investmentAnalysisPanel">
-    <h3>投資分析${a.ticker ? "" : "（尚未產生，等候 AI 背景產生，或執行 scripts/generate_analysis.py）"}</h3>
+    <div class="strategy-check-heading analysis-refresh-heading">
+      <h3>投資分析${a.ticker ? "" : "（尚未產生，等候 AI 背景產生，或執行 scripts/generate_analysis.py）"}</h3>
+      <button class="action-btn" id="refreshStockAnalysisBtn" type="button">更新此股分析</button>
+    </div>
+    <p id="analysisRefreshNote" class="strategy-check-intro"></p>
+    <p id="analysisRefreshStatus" class="strategy-check-status" role="status" aria-live="polite"></p>
     ${analysisAsOfHtml(a.as_of)}
     <div class="analysis-score-section">
       <h4>五面向評分</h4>
@@ -677,6 +682,7 @@ async function init() {
   applyHoldingMarker();
   wireStrategyCheckPanel();
   wirePinnedChecksPanel();
+  wireAnalysisRefresh();
 }
 
 // --- pinned checks (deterministic, no LLM) -------------------------------
@@ -1183,6 +1189,7 @@ if (window.sdDemo?.onReady) {
   window.sdDemo.onReady(isDemo => {
     demoMode = isDemo;
     setStrategyCheckRunning(strategyCheckIsRunning);
+    setAnalysisRefreshBusy(analysisRefreshBusy);
   });
 }
 
@@ -1205,6 +1212,164 @@ window.addEventListener("pagehide", leaveStrategyPage);
 window.addEventListener("beforeunload", leaveStrategyPage);
 window.addEventListener("pageshow", event => {
   if (event.persisted || !strategyPageActive) restoreStrategyPage();
+});
+
+// --- per-stock analysis refresh -------------------------------------------
+
+const ANALYSIS_POLL_INTERVAL_MS = 3000;
+const ANALYSIS_POLL_LIMIT_MS = 10 * 60 * 1000;
+let analysisRefreshBusy = false;
+let analysisStartedHere = false;
+let analysisPollTimer = null;
+let analysisPollDeadline = 0;
+let analysisPollGeneration = 0;
+let analysisPageActive = true;
+
+function setAnalysisRefreshStatus(message, isError = false) {
+  const status = document.getElementById("analysisRefreshStatus");
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle("error", isError);
+}
+
+function setAnalysisRefreshBusy(busy) {
+  analysisRefreshBusy = busy;
+  const button = document.getElementById("refreshStockAnalysisBtn");
+  if (!button) return;
+  button.disabled = demoMode || busy;
+  button.textContent = busy ? "分析更新中…" : "更新此股分析";
+  if (demoMode) {
+    button.title = "示範模式：此功能已停用";
+    button.setAttribute("aria-describedby", "sdDemoDisabledDescription");
+  }
+}
+
+function stopAnalysisPolling() {
+  if (analysisPollTimer) clearTimeout(analysisPollTimer);
+  analysisPollTimer = null;
+}
+
+function analysisCostText(hint) {
+  const parts = [];
+  if (hint && typeof hint.per_ticker_usd === "number") parts.push(`約 $${hint.per_ticker_usd.toFixed(2)}`);
+  if (hint && typeof hint.per_ticker_seconds === "number") parts.push(`約 ${Math.round(hint.per_ticker_seconds)} 秒`);
+  return parts.length ? `${parts.join("、")}（依你的 AI 而定）` : "會呼叫一次 AI";
+}
+
+async function loadAnalysisCostNote() {
+  const note = document.getElementById("analysisRefreshNote");
+  if (!note) return;
+  let hint = null;
+  try {
+    const response = await fetch("/api/analysis/cost-hint");
+    if (response.ok) hint = await response.json();
+  } catch (_) {
+    // The note falls back to the generic text.
+  }
+  note.textContent = analysisCostText(hint);
+}
+
+async function pollAnalysisStatus() {
+  const generation = ++analysisPollGeneration;
+  try {
+    const response = await fetch("/api/refresh/status");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const state = (await response.json()).analysis || {};
+    if (generation !== analysisPollGeneration) return;
+    if (state.running) {
+      if (!analysisPollDeadline) analysisPollDeadline = Date.now() + ANALYSIS_POLL_LIMIT_MS;
+      if (Date.now() >= analysisPollDeadline) {
+        analysisPollDeadline = 0;
+        analysisStartedHere = false;
+        setAnalysisRefreshBusy(false);
+        setAnalysisRefreshStatus("等待逾時；分析可能仍在背景執行，請稍後重新整理頁面。", true);
+        return;
+      }
+      setAnalysisRefreshBusy(true);
+      if (!analysisStartedHere) setAnalysisRefreshStatus("另一個分析更新正在執行，完成後才能再按。", false);
+      stopAnalysisPolling();
+      analysisPollTimer = setTimeout(pollAnalysisStatus, ANALYSIS_POLL_INTERVAL_MS);
+      return;
+    }
+    stopAnalysisPolling();
+    analysisPollDeadline = 0;
+    setAnalysisRefreshBusy(false);
+    if (analysisStartedHere) {
+      analysisStartedHere = false;
+      if (state.success === false) {
+        const reason = (state.last_result || []).slice(-2).join("；");
+        setAnalysisRefreshStatus(`分析更新失敗：${reason || "詳見終端機 log"}`, true);
+      } else {
+        setAnalysisRefreshStatus("分析更新完成，重新載入中…", false);
+        window.location.reload();
+      }
+    }
+  } catch (error) {
+    if (generation !== analysisPollGeneration) return;
+    if (analysisPageActive && analysisPollDeadline && Date.now() < analysisPollDeadline) {
+      stopAnalysisPolling();
+      analysisPollTimer = setTimeout(pollAnalysisStatus, ANALYSIS_POLL_INTERVAL_MS);
+      return;
+    }
+    setAnalysisRefreshBusy(false);
+    setAnalysisRefreshStatus(`讀取更新狀態失敗：${error.message}`, true);
+  }
+}
+
+async function startAnalysisRefresh() {
+  if (demoMode || analysisRefreshBusy) return;
+  setAnalysisRefreshBusy(true);
+  setAnalysisRefreshStatus("正在啟動分析更新…", false);
+  try {
+    const response = await fetch("/api/refresh/analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tickers: [ticker] }),
+    });
+    if (!response.ok) {
+      let detail = `HTTP ${response.status}`;
+      try {
+        const body = await response.json();
+        if (typeof body.detail === "string") detail = body.detail;
+      } catch (_) {
+        // keep the HTTP status
+      }
+      if (response.status === 409) {
+        analysisPollDeadline = Date.now() + ANALYSIS_POLL_LIMIT_MS;
+        setAnalysisRefreshStatus(detail, true);
+        pollAnalysisStatus();
+        return;
+      }
+      setAnalysisRefreshBusy(false);
+      setAnalysisRefreshStatus(response.status === 503 ? `${detail}\n（設定方式見 docs/ENGINES.md）` : `無法更新分析：${detail}`, true);
+      return;
+    }
+    analysisStartedHere = true;
+    analysisPollDeadline = Date.now() + ANALYSIS_POLL_LIMIT_MS;
+    setAnalysisRefreshStatus("分析更新已啟動，約每 3 秒檢查一次。", false);
+    pollAnalysisStatus();
+  } catch (error) {
+    setAnalysisRefreshBusy(false);
+    setAnalysisRefreshStatus(`無法更新分析：${error.message}`, true);
+  }
+}
+
+function wireAnalysisRefresh() {
+  const button = document.getElementById("refreshStockAnalysisBtn");
+  if (!button) return;
+  button.addEventListener("click", startAnalysisRefresh);
+  setAnalysisRefreshBusy(false);
+  loadAnalysisCostNote();
+  pollAnalysisStatus();  // disable the button when another refresh is already running
+}
+
+window.addEventListener("pagehide", () => {
+  analysisPageActive = false;
+  stopAnalysisPolling();
+});
+window.addEventListener("pageshow", event => {
+  analysisPageActive = true;
+  if (event.persisted && document.getElementById("refreshStockAnalysisBtn")) pollAnalysisStatus();
 });
 
 // --- holding (買入日期/均價) --------------------------------------------
