@@ -16,6 +16,25 @@
 
 它**不是**選股明牌，也**不預測**漲跌。五面向分數**尚無回測證據**顯示高分之後表現較好：技術面分數用 5 年歷史回測（[`scripts/backtest_technical.py`](scripts/backtest_technical.py)），與同儕相比沒有顯著差異；財報、估值、新聞三軸由 AI 判斷，無法回測。請把它當成「整理資訊、提醒自己照自己的規則做」的工具。
 
+## 也是學習「AI 交易員」怎麼做的入門教材
+
+先把交易的基本功弄清楚，之後想自己寫 AI 交易員，或想知道別人是怎麼做的，會順手很多。這個專案把一個「AI 輔助決策系統」該有的零件，拆成可以單獨閱讀的小模組，而且**刻意不讓 AI 直接下判斷**：
+
+| 你想學的概念 | 在哪裡看 |
+|---|---|
+| 把雜亂的資料整理成「事實表」，讓 AI 只能引用事實 | `backend/fact_catalog.py`、`backend/strategy.py`（`build_registry`） |
+| 怎麼設計 AI 的輸入輸出契約、怎麼擋掉亂編 | `backend/strategy.py`（`build_prompt`、`verify_rows`） |
+| 為什麼用過去的事實評價過去的買入才不會事後諸葛 | `backend/strategy.py`（`entry_facts`）、[docs/DESIGN.md](docs/DESIGN.md) |
+| 規則怎麼變成程式可以判斷的條件（不用 `eval`） | `backend/pin_expr.py`、`backend/pin_templates.py` |
+| 用程式強制的風控護欄，而不是只靠提示詞 | `backend/score_guards.py` |
+| 技術面規則的實作（趨勢、均線、停損、風報比） | `backend/meta_screen.py` |
+| 怎麼誠實地回測一個訊號（只用當時資料、扣掉大盤） | `scripts/backtest_technical.py` |
+| 讓程式接任何 AI（CLI、雲端 API、本機模型） | `backend/llm_engines.py`、[docs/ENGINES.md](docs/ENGINES.md) |
+| 控制成本、記錄每次 AI 呼叫 | `backend/llm_usage.py` |
+| 不可變的分析快照，日後才能驗證 AI 說得對不對 | `backend/snapshots.py` |
+
+它**不是**自動下單的交易機器人：不接券商、不下單，也不宣稱能賺錢。它示範的是在動手寫交易機器人之前最容易被跳過的部分：**規則要寫清楚、事實要可驗證、AI 的話不能全信、成本要看得見。**
+
 ## 立刻試試（不需要 AI 帳號）
 
 ```bash
