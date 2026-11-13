@@ -168,8 +168,8 @@ python3 scripts/generate_analysis.py 2330.TW   # 只跑指定代號
 把你自己的交易策略／筆記（`.md`、`.txt`，單檔 ≤100KB、總量 ≤300KB、≤20 檔）放進 `data/strategy/`（不會進 git），然後：
 
 ```bash
-python scripts/strategy_check.py BBBB            # 呼叫你登入的 claude CLI
-python scripts/strategy_check.py BBBB --dry-run  # 只看會送出什麼 prompt、選到哪些段落
+python scripts/strategy_check.py <代號>            # 呼叫你登入的 claude CLI
+python scripts/strategy_check.py <代號> --dry-run  # 只看會送出什麼 prompt、選到哪些段落
 ```
 
 輸出是一張規則對照表。**程式只驗證兩件事**：①引文真的逐字存在於你的筆記、且在所有筆記中唯一；②引用的事實代碼（如 `TECH.stage2`）真的存在，證據文字由程式依代碼重新產生。`pass`／`fail` 是模型的判斷，**不代表程式證明規則成立**。筆記會被當成「可能含指令的使用者資料」，但這只能降低 prompt injection 風險，無法消除。
