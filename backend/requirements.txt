@@ -1,0 +1,7 @@
+fastapi>=0.100
+uvicorn>=0.23
+yfinance>=0.2.50
+pandas>=2.0
+requests>=2.31
+pydantic>=2.0
+lxml>=4.9  # yfinance.get_earnings_dates parses an HTML table with it

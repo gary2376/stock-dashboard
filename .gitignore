@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+data/price_cache/
+data/market_cache/
+*.log
+
+# personal watchlist/favorites/holdings/codex notes — not meant to be public, each
+# clone starts empty and builds its own via the UI
+data/tickers.json
+data/favorites.json
+data/holdings.json
+data/analysis/
+data/chat_history.json
+
+# exported backups (via the UI's 匯出備份 button) are personal data too — the folder
+# itself is tracked (so a fresh clone still has somewhere to export/import from), just
+# not its contents
+data/backups/*.json
+data/analysis_history/
+data/.locks/

@@ -1,0 +1,9 @@
+# Versions this project was last tested with (Python 3.15 dev venv). Not a promise that one
+# set resolves on every Python from 3.9 to 3.15 — use requirements.txt for that.
+fastapi==0.143.2
+uvicorn==0.54.0
+yfinance==1.7.0
+pandas==3.0.6
+requests==2.34.2
+pydantic==2.14.1
+lxml==6.1.3

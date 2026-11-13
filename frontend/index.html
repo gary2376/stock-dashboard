@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>選股系統</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="page-header">
+  <div>
+    <h1>選股系統</h1>
+    <p class="subtitle">股價位階 + 獲利檢查，點卡片看詳細分析</p>
+  </div>
+  <div class="controls">
+    <input id="newTicker" type="text" class="text-input" placeholder="美股如TSLA／台股如2330" maxlength="12" />
+    <button id="addTickerBtn" class="range-btn">新增</button>
+    <div class="market-filter-row" id="marketFilterBtns">
+      <button class="range-btn active" data-market="all">全部</button>
+      <button class="range-btn" data-market="us">美股</button>
+      <button class="range-btn" data-market="tw">台股</button>
+    </div>
+    <label class="section-label" for="rangeSelect">區間位置</label>
+    <select id="rangeSelect">
+      <option value="1m">近一個月</option>
+      <option value="3m">近三個月</option>
+      <option value="6m">近半年</option>
+      <option value="1y" selected>近一年</option>
+      <option value="3y">近三年</option>
+    </select>
+    <label class="section-label" for="sortSelect">排序</label>
+    <select id="sortSelect">
+      <option value="ticker">代號</option>
+      <option value="price">股價</option>
+      <option value="day_change_pct">今日漲跌%</option>
+      <option value="pct_from_high">距高點%</option>
+      <option value="sigma">長期趨勢位階σ</option>
+      <option value="range_pct">區間位置%</option>
+      <option value="market_cap">市值</option>
+      <option value="holding_pl_pct">持倉損益%</option>
+      <option value="holding_pl_amount">持倉損益金額</option>
+    </select>
+    <button id="sortDirBtn" class="range-btn" title="切換升冪/降冪">↑</button>
+    <a href="dashboard.html" class="range-btn nav-link">📊 持倉Dashboard</a>
+  </div>
+</header>
+<section class="search-row">
+  <input id="searchInput" type="text" class="text-input search-input" placeholder="🔍 搜尋代號或公司名稱" />
+</section>
+<section class="refresh-row">
+  <div class="refresh-row-group">
+    <div class="refresh-item">
+      <button id="refreshPricesBtn" class="action-btn">🔄 更新股價</button>
+      <span class="refresh-status" id="refreshPricesStatus">尚未更新過</span>
+    </div>
+    <div class="refresh-item">
+      <button id="refreshAnalysisBtn" class="action-btn">🧠 更新基本面分析</button>
+      <span class="refresh-status" id="refreshAnalysisStatus">尚未更新過</span>
+    </div>
+  </div>
+  <div class="refresh-row-group">
+    <div class="refresh-item">
+      <button id="exportBackupBtn" class="action-btn">💾 匯出備份</button>
+      <span class="refresh-status" id="backupStatus"></span>
+    </div>
+    <div class="refresh-item">
+      <button id="importBackupBtn" class="action-btn">📂 匯入備份</button>
+      <input type="file" id="importBackupFile" accept="application/json" style="display:none;">
+    </div>
+  </div>
+</section>
+<p id="statusMsg" class="status-msg"></p>
+<main id="grid" class="grid">
+  <div class="loading">載入中...</div>
+</main>
+<script src="app.js"></script>
+<script src="chat-widget.js"></script>
+</body>
+</html>
