@@ -1,0 +1,4029 @@
+[
+ {
+  "ticker": "CASE01",
+  "fund": {
+   "name": "CASE01",
+   "sector": "Consumer Cyclical",
+   "industry": "Steel",
+   "profit_margins": -0.01,
+   "free_cashflow": null,
+   "total_cash": 0,
+   "total_debt": null,
+   "trailing_pe": 12.5,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 20,
+    "valuation": 66,
+    "news": 20,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 20,
+    "valuation": 40,
+    "news": 20,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "20分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評66分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限40分。",
+    "news": "20分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 66,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE02",
+  "fund": {
+   "name": "CASE02",
+   "sector": "Industrials",
+   "industry": "Software",
+   "profit_margins": 0.25,
+   "free_cashflow": 0,
+   "total_cash": null,
+   "total_debt": 1000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": 2.5
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 88,
+    "valuation": 58,
+    "news": 47,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 88,
+    "valuation": 45,
+    "news": 47,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "88分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "45分：本益比落在同業區間。【系統護欄】模型原評58分，因價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限45分。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "74分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 58,
+     "to": 45,
+     "why": "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE03",
+  "fund": {
+   "name": "CASE03",
+   "sector": "Consumer Cyclical",
+   "industry": "Aluminum",
+   "profit_margins": -0.01,
+   "free_cashflow": 200000000.0,
+   "total_cash": 0,
+   "total_debt": 0,
+   "trailing_pe": 12.5,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 58,
+    "valuation": 74,
+    "news": 74,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 74,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評58分，因公司目前虧損（淨利率為負），上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評74分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限40分。",
+    "news": "74分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "58分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 58,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）"
+    },
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE04",
+  "fund": {
+   "name": "CASE04",
+   "sector": "Technology",
+   "industry": "Banks",
+   "profit_margins": -0.01,
+   "free_cashflow": null,
+   "total_cash": 8000000000.0,
+   "total_debt": 6000000000.0,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -75.0,
+  "data": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 58,
+    "valuation": 47,
+    "news": 38,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 38,
+    "market": 35
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評58分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%，上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評47分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限40分。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "35分：大盤均線位置中性。【系統護欄】規則原給66分，因科技／半導體族群正在崩跌（費城半導體指數近5日-12.0%），大盤指數的均線是落後指標，看不出族群層級的衝擊，上限35分。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 58,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 47,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    },
+    {
+     "axis": "market",
+     "from": 66,
+     "to": 35,
+     "why": "科技／半導體族群正在崩跌（費城半導體指數近5日-12.0%），大盤指數的均線是落後指標，看不出族群層級的衝擊"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE05",
+  "fund": {
+   "name": "CASE05",
+   "sector": "Healthcare",
+   "industry": "Oil & Gas E&P",
+   "profit_margins": -0.2,
+   "free_cashflow": 200000000.0,
+   "total_cash": 2000000000.0,
+   "total_debt": 1000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 66,
+    "valuation": 38,
+    "news": 74,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 40,
+    "valuation": 38,
+    "news": 74,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評66分，因公司目前虧損（淨利率為負），上限40分。",
+    "valuation": "38分：本益比落在同業區間。",
+    "news": "74分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 66,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE06",
+  "fund": {
+   "name": "CASE06",
+   "sector": "Consumer Cyclical",
+   "industry": "Steel",
+   "profit_margins": null,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 8000000000.0,
+   "total_debt": null,
+   "trailing_pe": 34.0,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": 2.5
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 66,
+    "valuation": 74,
+    "news": 38,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 66,
+    "valuation": 55,
+    "news": 38,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "66分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評74分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE07",
+  "fund": {
+   "name": "CASE07",
+   "sector": "Energy",
+   "industry": "Software",
+   "profit_margins": 0.25,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 0,
+   "total_debt": 6000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": 2.5
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 88,
+    "valuation": 66,
+    "news": 47,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 88,
+    "valuation": 55,
+    "news": 47,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "88分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評66分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 66,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE08",
+  "fund": {
+   "name": "CASE08",
+   "sector": "Industrials",
+   "industry": "Oil & Gas E&P",
+   "profit_margins": -0.2,
+   "free_cashflow": -300000000.0,
+   "total_cash": 500000000.0,
+   "total_debt": null,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -75.0,
+  "data": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 47,
+    "valuation": 74,
+    "news": 38,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 38,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評47分，因公司目前虧損（淨利率為負）；自由現金流為負；最近一季EPS低於市場預期15.0%，上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評74分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限40分。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 47,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；自由現金流為負；最近一季EPS低於市場預期15.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE09",
+  "fund": {
+   "name": "CASE09",
+   "sector": "Basic Materials",
+   "industry": "Specialty Chemicals",
+   "profit_margins": -0.01,
+   "free_cashflow": null,
+   "total_cash": 8000000000.0,
+   "total_debt": 6000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 500000000.0,
+   "earnings_history": []
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 47,
+    "valuation": 74,
+    "news": 74,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 74,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評47分，因公司目前虧損（淨利率為負），上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評74分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限40分。",
+    "news": "74分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 47,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）"
+    },
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE10",
+  "fund": {
+   "name": "CASE10",
+   "sector": "Basic Materials",
+   "industry": "Specialty Chemicals",
+   "profit_margins": 0.08,
+   "free_cashflow": -300000000.0,
+   "total_cash": 2000000000.0,
+   "total_debt": 1000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 66,
+    "valuation": 66,
+    "news": 38,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 45,
+    "valuation": 55,
+    "news": 38,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "45分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評66分，因自由現金流為負，上限45分。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評66分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "38分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 66,
+     "to": 45,
+     "why": "自由現金流為負"
+    },
+    {
+     "axis": "valuation",
+     "from": 66,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE11",
+  "fund": {
+   "name": "CASE11",
+   "sector": "Healthcare",
+   "industry": "Banks",
+   "profit_margins": 0.0,
+   "free_cashflow": 0,
+   "total_cash": null,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": 2.5
+   }
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 66,
+    "valuation": 74,
+    "news": 58,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 66,
+    "valuation": 74,
+    "news": 58,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "66分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "74分：本益比落在同業區間。",
+    "news": "58分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE12",
+  "fund": {
+   "name": "CASE12",
+   "sector": "Technology",
+   "industry": "Steel",
+   "profit_margins": -0.01,
+   "free_cashflow": -300000000.0,
+   "total_cash": 0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": []
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": null,
+  "data": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 66,
+    "valuation": 20,
+    "news": 66,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 40,
+    "valuation": 20,
+    "news": 66,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評66分，因公司目前虧損（淨利率為負）；自由現金流為負，上限40分。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 66,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；自由現金流為負"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE13",
+  "fund": {
+   "name": "CASE13",
+   "sector": "Healthcare",
+   "industry": "Banks",
+   "profit_margins": -0.01,
+   "free_cashflow": -300000000.0,
+   "total_cash": null,
+   "total_debt": null,
+   "trailing_pe": 34.0,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 66,
+    "valuation": 47,
+    "news": 38,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 38,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評66分，因公司目前虧損（淨利率為負）；自由現金流為負；最近一季EPS低於市場預期15.0%，上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評47分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限40分。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 66,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；自由現金流為負；最近一季EPS低於市場預期15.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 47,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE14",
+  "fund": {
+   "name": "CASE14",
+   "sector": "Technology",
+   "industry": "Medical Devices",
+   "profit_margins": -0.2,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 8000000000.0,
+   "total_debt": 6000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": 3.0
+   }
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 74,
+    "valuation": 88,
+    "news": 88,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 88,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評74分，因公司目前虧損（淨利率為負），上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評88分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限40分。",
+    "news": "88分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "38分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 74,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）"
+    },
+    {
+     "axis": "valuation",
+     "from": 88,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE15",
+  "fund": {
+   "name": "CASE15",
+   "sector": "Healthcare",
+   "industry": "Aluminum",
+   "profit_margins": 0.08,
+   "free_cashflow": null,
+   "total_cash": 0,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 50000000000.0,
+   "earnings_history": []
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": 2.5
+   }
+  },
+  "pct_from_high": -75.0,
+  "data": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 66,
+    "valuation": 38,
+    "news": 66,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 66,
+    "valuation": 38,
+    "news": 66,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "66分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "38分：本益比落在同業區間。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE16",
+  "fund": {
+   "name": "CASE16",
+   "sector": "Financial Services",
+   "industry": "Retail",
+   "profit_margins": 0.08,
+   "free_cashflow": 0,
+   "total_cash": null,
+   "total_debt": 1000000000.0,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": 3.0
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 66,
+    "valuation": 20,
+    "news": 58,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 66,
+    "valuation": 20,
+    "news": 58,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "66分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "58分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE17",
+  "fund": {
+   "name": "CASE17",
+   "sector": "Consumer Cyclical",
+   "industry": "Software",
+   "profit_margins": 0.25,
+   "free_cashflow": 0,
+   "total_cash": 500000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 38,
+    "valuation": 88,
+    "news": 47,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 38,
+    "valuation": 45,
+    "news": 47,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "38分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "45分：本益比落在同業區間。【系統護欄】模型原評88分，因價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限45分。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "58分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 88,
+     "to": 45,
+     "why": "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE18",
+  "fund": {
+   "name": "CASE18",
+   "sector": "Energy",
+   "industry": "Software",
+   "profit_margins": 0.25,
+   "free_cashflow": null,
+   "total_cash": 0,
+   "total_debt": 0,
+   "trailing_pe": 12.5,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -75.0,
+  "data": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 20,
+    "valuation": 47,
+    "news": 74,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 20,
+    "valuation": 45,
+    "news": 74,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "20分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "45分：本益比落在同業區間。【系統護欄】模型原評47分，因價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限45分。",
+    "news": "74分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 47,
+     "to": 45,
+     "why": "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE19",
+  "fund": {
+   "name": "CASE19",
+   "sector": "Healthcare",
+   "industry": "Retail",
+   "profit_margins": 0.25,
+   "free_cashflow": -300000000.0,
+   "total_cash": 2000000000.0,
+   "total_debt": 0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 47,
+    "valuation": 88,
+    "news": 47,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 45,
+    "valuation": 88,
+    "news": 47,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "45分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評47分，因自由現金流為負，上限45分。",
+    "valuation": "88分：本益比落在同業區間。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 47,
+     "to": 45,
+     "why": "自由現金流為負"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE20",
+  "fund": {
+   "name": "CASE20",
+   "sector": "Energy",
+   "industry": "Copper",
+   "profit_margins": 0.0,
+   "free_cashflow": -300000000.0,
+   "total_cash": 0,
+   "total_debt": 1000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 74,
+    "valuation": 88,
+    "news": 66,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 45,
+    "valuation": 55,
+    "news": 66,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "45分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評74分，因自由現金流為負，上限45分。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評88分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 74,
+     "to": 45,
+     "why": "自由現金流為負"
+    },
+    {
+     "axis": "valuation",
+     "from": 88,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE21",
+  "fund": {
+   "name": "CASE21",
+   "sector": "Technology",
+   "industry": "Semiconductors",
+   "profit_margins": null,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 8000000000.0,
+   "total_debt": null,
+   "trailing_pe": 34.0,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 47,
+    "valuation": 38,
+    "news": 66,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 47,
+    "valuation": 38,
+    "news": 66,
+    "market": 35
+   },
+   "score_reasons": {
+    "fundamentals": "47分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "38分：本益比落在同業區間。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "35分：大盤均線位置中性。【系統護欄】規則原給47分，因科技／半導體族群正在崩跌（費城半導體指數近5日-8.0%），大盤指數的均線是落後指標，看不出族群層級的衝擊，上限35分。"
+   },
+   "caps": [
+    {
+     "axis": "market",
+     "from": 47,
+     "to": 35,
+     "why": "科技／半導體族群正在崩跌（費城半導體指數近5日-8.0%），大盤指數的均線是落後指標，看不出族群層級的衝擊"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE22",
+  "fund": {
+   "name": "CASE22",
+   "sector": "Industrials",
+   "industry": "Specialty Chemicals",
+   "profit_margins": null,
+   "free_cashflow": null,
+   "total_cash": 0,
+   "total_debt": 0,
+   "trailing_pe": null,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 66,
+    "valuation": 74,
+    "news": 47,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 66,
+    "valuation": 55,
+    "news": 47,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "66分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評74分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "58分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE23",
+  "fund": {
+   "name": "CASE23",
+   "sector": "Healthcare",
+   "industry": "Banks",
+   "profit_margins": null,
+   "free_cashflow": null,
+   "total_cash": 0,
+   "total_debt": 6000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 88,
+    "valuation": 47,
+    "news": 88,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 88,
+    "valuation": 45,
+    "news": 88,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "88分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "45分：本益比落在同業區間。【系統護欄】模型原評47分，因價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限45分。",
+    "news": "88分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 47,
+     "to": 45,
+     "why": "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE24",
+  "fund": {
+   "name": "CASE24",
+   "sector": "Industrials",
+   "industry": "Copper",
+   "profit_margins": -0.01,
+   "free_cashflow": 0,
+   "total_cash": 500000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": -55.0
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -75.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 47,
+    "valuation": 58,
+    "news": 88,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 88,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評47分，因公司目前虧損（淨利率為負）；總負債超過現金1.5倍，自由現金流相對負債偏薄，上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評58分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限40分。",
+    "news": "88分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 47,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；總負債超過現金1.5倍，自由現金流相對負債偏薄"
+    },
+    {
+     "axis": "valuation",
+     "from": 58,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE25",
+  "fund": {
+   "name": "CASE25",
+   "sector": "Basic Materials",
+   "industry": "Oil & Gas E&P",
+   "profit_margins": 0.25,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 8000000000.0,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": null,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 74,
+    "valuation": 20,
+    "news": 66,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 70,
+    "valuation": 20,
+    "news": 66,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "70分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評74分，因最近一季EPS低於市場預期15.0%，上限70分。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 74,
+     "to": 70,
+     "why": "最近一季EPS低於市場預期15.0%"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE26",
+  "fund": {
+   "name": "CASE26",
+   "sector": "Financial Services",
+   "industry": "Banks",
+   "profit_margins": -0.01,
+   "free_cashflow": 0,
+   "total_cash": null,
+   "total_debt": 6000000000.0,
+   "trailing_pe": null,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 38,
+    "valuation": 74,
+    "news": 88,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 38,
+    "valuation": 40,
+    "news": 88,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "38分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評74分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值，上限40分。",
+    "news": "88分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "38分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE27",
+  "fund": {
+   "name": "CASE27",
+   "sector": "Industrials",
+   "industry": "Semiconductors",
+   "profit_margins": -0.2,
+   "free_cashflow": null,
+   "total_cash": 500000000.0,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 38,
+    "valuation": 38,
+    "news": 38,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 38,
+    "valuation": 38,
+    "news": 38,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "38分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "38分：本益比落在同業區間。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "74分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE28",
+  "fund": {
+   "name": "CASE28",
+   "sector": "Financial Services",
+   "industry": "Oil & Gas E&P",
+   "profit_margins": 0.25,
+   "free_cashflow": null,
+   "total_cash": 8000000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": null
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 38,
+    "valuation": 66,
+    "news": 47,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 38,
+    "valuation": 55,
+    "news": 47,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "38分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評66分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 66,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE29",
+  "fund": {
+   "name": "CASE29",
+   "sector": "Financial Services",
+   "industry": "Medical Devices",
+   "profit_margins": -0.2,
+   "free_cashflow": 9000000000.0,
+   "total_cash": null,
+   "total_debt": 20000000000.0,
+   "trailing_pe": null,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 20,
+    "valuation": 20,
+    "news": 58,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 20,
+    "valuation": 20,
+    "news": 58,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "20分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "58分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE30",
+  "fund": {
+   "name": "CASE30",
+   "sector": "Technology",
+   "industry": "Steel",
+   "profit_margins": 0.0,
+   "free_cashflow": 9000000000.0,
+   "total_cash": null,
+   "total_debt": null,
+   "trailing_pe": 12.5,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": null,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 38,
+    "valuation": 47,
+    "news": 58,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 38,
+    "valuation": 47,
+    "news": 58,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "38分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "47分：本益比落在同業區間。",
+    "news": "58分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE31",
+  "fund": {
+   "name": "CASE31",
+   "sector": "Basic Materials",
+   "industry": "Copper",
+   "profit_margins": null,
+   "free_cashflow": 200000000.0,
+   "total_cash": 2000000000.0,
+   "total_debt": 1000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 66,
+    "valuation": 66,
+    "news": 47,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 66,
+    "valuation": 55,
+    "news": 47,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "66分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評66分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 66,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE32",
+  "fund": {
+   "name": "CASE32",
+   "sector": "Energy",
+   "industry": "Copper",
+   "profit_margins": 0.0,
+   "free_cashflow": 0,
+   "total_cash": 0,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 47,
+    "valuation": 58,
+    "news": 88,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 47,
+    "valuation": 55,
+    "news": 88,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "47分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評58分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "88分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "74分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 58,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE33",
+  "fund": {
+   "name": "CASE33",
+   "sector": "Industrials",
+   "industry": "Aluminum",
+   "profit_margins": 0.0,
+   "free_cashflow": 0,
+   "total_cash": 8000000000.0,
+   "total_debt": 0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 58,
+    "valuation": 88,
+    "news": 66,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 58,
+    "valuation": 45,
+    "news": 66,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "58分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "45分：本益比落在同業區間。【系統護欄】模型原評88分，因價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限45分。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 88,
+     "to": 45,
+     "why": "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE34",
+  "fund": {
+   "name": "CASE34",
+   "sector": "Healthcare",
+   "industry": "Banks",
+   "profit_margins": 0.08,
+   "free_cashflow": 0,
+   "total_cash": null,
+   "total_debt": 0,
+   "trailing_pe": 12.5,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 58,
+    "valuation": 20,
+    "news": 47,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 58,
+    "valuation": 20,
+    "news": 47,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "58分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE35",
+  "fund": {
+   "name": "CASE35",
+   "sector": "Healthcare",
+   "industry": "Banks",
+   "profit_margins": 0.25,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 8000000000.0,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 88,
+    "valuation": 38,
+    "news": 66,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 88,
+    "valuation": 38,
+    "news": 66,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "88分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "38分：本益比落在同業區間。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "58分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE36",
+  "fund": {
+   "name": "CASE36",
+   "sector": "Consumer Cyclical",
+   "industry": "Oil & Gas E&P",
+   "profit_margins": -0.2,
+   "free_cashflow": null,
+   "total_cash": 8000000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": null,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 47,
+    "valuation": 20,
+    "news": 88,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 40,
+    "valuation": 20,
+    "news": 88,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評47分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期10.0%，上限40分。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "88分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "58分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 47,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期10.0%"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE37",
+  "fund": {
+   "name": "CASE37",
+   "sector": "Consumer Cyclical",
+   "industry": "Specialty Chemicals",
+   "profit_margins": -0.01,
+   "free_cashflow": 9000000000.0,
+   "total_cash": null,
+   "total_debt": 0,
+   "trailing_pe": 34.0,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 88,
+    "valuation": 66,
+    "news": 58,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 58,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評88分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%，上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評66分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限40分。",
+    "news": "58分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 88,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 66,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE38",
+  "fund": {
+   "name": "CASE38",
+   "sector": "Healthcare",
+   "industry": "Steel",
+   "profit_margins": -0.01,
+   "free_cashflow": null,
+   "total_cash": 500000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 500000000.0,
+   "earnings_history": []
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": -55.0
+   }
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": null,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 88,
+    "valuation": 88,
+    "news": 66,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 66,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評88分，因公司目前虧損（淨利率為負），上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評88分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限40分。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 88,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）"
+    },
+    {
+     "axis": "valuation",
+     "from": 88,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE39",
+  "fund": {
+   "name": "CASE39",
+   "sector": "Healthcare",
+   "industry": "Steel",
+   "profit_margins": 0.08,
+   "free_cashflow": -300000000.0,
+   "total_cash": 0,
+   "total_debt": 1000000000.0,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": 4.2
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": null,
+  "data": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 20,
+    "valuation": 58,
+    "news": 20,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 20,
+    "valuation": 55,
+    "news": 20,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "20分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評58分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "20分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 58,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE40",
+  "fund": {
+   "name": "CASE40",
+   "sector": "Financial Services",
+   "industry": "Banks",
+   "profit_margins": -0.01,
+   "free_cashflow": null,
+   "total_cash": 2000000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -75.0,
+  "data": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 88,
+    "valuation": 47,
+    "news": 47,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 47,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評88分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%，上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評47分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限40分。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 88,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 47,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE41",
+  "fund": {
+   "name": "CASE41",
+   "sector": "Consumer Cyclical",
+   "industry": "Medical Devices",
+   "profit_margins": -0.2,
+   "free_cashflow": 200000000.0,
+   "total_cash": 0,
+   "total_debt": 6000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 66,
+    "valuation": 74,
+    "news": 47,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 47,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評66分，因公司目前虧損（淨利率為負），上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評74分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限40分。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 66,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）"
+    },
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE42",
+  "fund": {
+   "name": "CASE42",
+   "sector": "Financial Services",
+   "industry": "Copper",
+   "profit_margins": -0.2,
+   "free_cashflow": null,
+   "total_cash": null,
+   "total_debt": 1000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 58,
+    "valuation": 66,
+    "news": 58,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 58,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評58分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期10.0%，上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評66分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限40分。",
+    "news": "58分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "74分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 58,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期10.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 66,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE43",
+  "fund": {
+   "name": "CASE43",
+   "sector": "Healthcare",
+   "industry": "Oil & Gas E&P",
+   "profit_margins": -0.01,
+   "free_cashflow": 200000000.0,
+   "total_cash": 500000000.0,
+   "total_debt": 1000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 66,
+    "valuation": 20,
+    "news": 66,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 40,
+    "valuation": 20,
+    "news": 66,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評66分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%，上限40分。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 66,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE44",
+  "fund": {
+   "name": "CASE44",
+   "sector": "Technology",
+   "industry": "Medical Devices",
+   "profit_margins": -0.01,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 0,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": 3.0
+   }
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -75.0,
+  "data": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 74,
+    "valuation": 20,
+    "news": 88,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 40,
+    "valuation": 20,
+    "news": 88,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評74分，因公司目前虧損（淨利率為負），上限40分。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "88分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "38分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 74,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE45",
+  "fund": {
+   "name": "CASE45",
+   "sector": "Energy",
+   "industry": "Copper",
+   "profit_margins": -0.2,
+   "free_cashflow": null,
+   "total_cash": 0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": null,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": -55.0
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 47,
+    "valuation": 20,
+    "news": 66,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 40,
+    "valuation": 20,
+    "news": 66,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評47分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期10.0%，上限40分。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 47,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期10.0%"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE46",
+  "fund": {
+   "name": "CASE46",
+   "sector": "Consumer Cyclical",
+   "industry": "Copper",
+   "profit_margins": null,
+   "free_cashflow": null,
+   "total_cash": 2000000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": null
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 20,
+    "valuation": 20,
+    "news": 58,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 20,
+    "valuation": 20,
+    "news": 58,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "20分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "58分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE47",
+  "fund": {
+   "name": "CASE47",
+   "sector": "Industrials",
+   "industry": "Semiconductors",
+   "profit_margins": 0.25,
+   "free_cashflow": 200000000.0,
+   "total_cash": 500000000.0,
+   "total_debt": 0,
+   "trailing_pe": 12.5,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 20,
+    "valuation": 20,
+    "news": 20,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 58,
+    "fundamentals": 20,
+    "valuation": 20,
+    "news": 20,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "20分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "20分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "74分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE48",
+  "fund": {
+   "name": "CASE48",
+   "sector": "Industrials",
+   "industry": "Medical Devices",
+   "profit_margins": -0.2,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 0,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 58,
+    "valuation": 66,
+    "news": 38,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 40,
+    "valuation": 40,
+    "news": 38,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評58分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%，上限40分。",
+    "valuation": "40分：本益比落在同業區間。【系統護欄】模型原評66分，因沒有為正的實際獲利可當估值錨，本益比只剩估計值，上限40分。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 58,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 66,
+     "to": 40,
+     "why": "沒有為正的實際獲利可當估值錨，本益比只剩估計值"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE49",
+  "fund": {
+   "name": "CASE49",
+   "sector": "Financial Services",
+   "industry": "Copper",
+   "profit_margins": 0.0,
+   "free_cashflow": -300000000.0,
+   "total_cash": null,
+   "total_debt": 0,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 58,
+    "valuation": 74,
+    "news": 74,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 45,
+    "valuation": 55,
+    "news": 74,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "45分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評58分，因自由現金流為負；最近一季EPS低於市場預期10.0%，上限45分。",
+    "valuation": "55分：本益比落在同業區間。【系統護欄】模型原評74分，因週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限55分。",
+    "news": "74分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 58,
+     "to": 45,
+     "why": "自由現金流為負；最近一季EPS低於市場預期10.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 55,
+     "why": "週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE50",
+  "fund": {
+   "name": "CASE50",
+   "sector": "Consumer Cyclical",
+   "industry": "Semiconductors",
+   "profit_margins": 0.25,
+   "free_cashflow": 0,
+   "total_cash": null,
+   "total_debt": 1000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": 3.0
+   }
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": null,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 38,
+    "valuation": 47,
+    "news": 38,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 38,
+    "valuation": 47,
+    "news": 38,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "38分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "47分：本益比落在同業區間。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE51",
+  "fund": {
+   "name": "CASE51",
+   "sector": "Technology",
+   "industry": "Medical Devices",
+   "profit_margins": 0.0,
+   "free_cashflow": -300000000.0,
+   "total_cash": 2000000000.0,
+   "total_debt": 0,
+   "trailing_pe": 34.0,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": -12.0
+   }
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -30.0,
+  "data": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 88,
+    "valuation": 58,
+    "news": 20,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 45,
+    "valuation": 58,
+    "news": 20,
+    "market": 20
+   },
+   "score_reasons": {
+    "fundamentals": "45分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評88分，因自由現金流為負；最近一季EPS低於市場預期10.0%，上限45分。",
+    "valuation": "58分：本益比落在同業區間。",
+    "news": "20分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "20分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 88,
+     "to": 45,
+     "why": "自由現金流為負；最近一季EPS低於市場預期10.0%"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE52",
+  "fund": {
+   "name": "CASE52",
+   "sector": "Technology",
+   "industry": "Steel",
+   "profit_margins": 0.0,
+   "free_cashflow": null,
+   "total_cash": 8000000000.0,
+   "total_debt": 1000000000.0,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": -40.0
+   }
+  },
+  "health": {
+   "side_5d": {}
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 20,
+    "valuation": 20,
+    "news": 74,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 66,
+    "fundamentals": 20,
+    "valuation": 20,
+    "news": 74,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "20分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "74分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE53",
+  "fund": {
+   "name": "CASE53",
+   "sector": "Industrials",
+   "industry": "Steel",
+   "profit_margins": 0.08,
+   "free_cashflow": -300000000.0,
+   "total_cash": 500000000.0,
+   "total_debt": 6000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {}
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 88,
+    "valuation": 38,
+    "news": 74,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 45,
+    "valuation": 38,
+    "news": 74,
+    "market": 38
+   },
+   "score_reasons": {
+    "fundamentals": "45分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評88分，因自由現金流為負；總負債超過現金1.5倍，自由現金流相對負債偏薄；最近一季EPS低於市場預期15.0%，上限45分。",
+    "valuation": "38分：本益比落在同業區間。",
+    "news": "74分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "38分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 88,
+     "to": 45,
+     "why": "自由現金流為負；總負債超過現金1.5倍，自由現金流相對負債偏薄；最近一季EPS低於市場預期15.0%"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE54",
+  "fund": {
+   "name": "CASE54",
+   "sector": "Healthcare",
+   "industry": "Medical Devices",
+   "profit_margins": 0.25,
+   "free_cashflow": null,
+   "total_cash": 8000000000.0,
+   "total_debt": 1000000000.0,
+   "trailing_pe": null,
+   "market_cap": 2000000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 20,
+    "valuation": 88,
+    "news": 38,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 88,
+    "fundamentals": 20,
+    "valuation": 88,
+    "news": 38,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "20分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "88分：本益比落在同業區間。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE55",
+  "fund": {
+   "name": "CASE55",
+   "sector": "Financial Services",
+   "industry": "Specialty Chemicals",
+   "profit_margins": 0.25,
+   "free_cashflow": 200000000.0,
+   "total_cash": 0,
+   "total_debt": 0,
+   "trailing_pe": null,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": -40.0
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": 2.5
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 74,
+    "valuation": 88,
+    "news": 38,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 70,
+    "valuation": 45,
+    "news": 38,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "70分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評74分，因最近一季EPS低於市場預期15.0%，上限70分。",
+    "valuation": "45分：本益比落在同業區間。【系統護欄】模型原評88分，因價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜，上限45分。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "58分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 74,
+     "to": 70,
+     "why": "最近一季EPS低於市場預期15.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 88,
+     "to": 45,
+     "why": "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱；週期性產業，低本益比可能反映景氣高點的獲利而非真便宜"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE56",
+  "fund": {
+   "name": "CASE56",
+   "sector": "Healthcare",
+   "industry": "Banks",
+   "profit_margins": null,
+   "free_cashflow": null,
+   "total_cash": 500000000.0,
+   "total_debt": null,
+   "trailing_pe": null,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": 2.5
+   }
+  },
+  "pct_from_high": -75.0,
+  "data": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 38,
+    "valuation": 20,
+    "news": 47,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 47,
+    "fundamentals": 38,
+    "valuation": 20,
+    "news": 47,
+    "market": 88
+   },
+   "score_reasons": {
+    "fundamentals": "38分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "20分：本益比落在同業區間。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "88分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE57",
+  "fund": {
+   "name": "CASE57",
+   "sector": "Consumer Cyclical",
+   "industry": "Retail",
+   "profit_margins": 0.08,
+   "free_cashflow": null,
+   "total_cash": null,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": -40.0
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -12.0
+   }
+  },
+  "pct_from_high": null,
+  "data": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 88,
+    "valuation": 74,
+    "news": 38,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 20,
+    "fundamentals": 70,
+    "valuation": 45,
+    "news": 38,
+    "market": 58
+   },
+   "score_reasons": {
+    "fundamentals": "70分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評88分，因最近一季EPS低於市場預期10.0%，上限70分。",
+    "valuation": "45分：本益比落在同業區間。【系統護欄】模型原評74分，因價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限45分。",
+    "news": "38分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "58分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 88,
+     "to": 70,
+     "why": "最近一季EPS低於市場預期10.0%"
+    },
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 45,
+     "why": "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE58",
+  "fund": {
+   "name": "CASE58",
+   "sector": "Energy",
+   "industry": "Semiconductors",
+   "profit_margins": 0.25,
+   "free_cashflow": null,
+   "total_cash": 500000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": null
+    }
+   ]
+  },
+  "dossier": null,
+  "health": {
+   "side_5d": {
+    "費城半導體指數": 2.5
+   }
+  },
+  "pct_from_high": -2.0,
+  "data": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 58,
+    "valuation": 47,
+    "news": 47,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 38,
+    "fundamentals": 58,
+    "valuation": 47,
+    "news": 47,
+    "market": 66
+   },
+   "score_reasons": {
+    "fundamentals": "58分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "47分：本益比落在同業區間。",
+    "news": "47分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "66分：大盤均線位置中性。"
+   },
+   "caps": []
+  }
+ },
+ {
+  "ticker": "CASE59",
+  "fund": {
+   "name": "CASE59",
+   "sector": "Technology",
+   "industry": "Oil & Gas E&P",
+   "profit_margins": -0.01,
+   "free_cashflow": 9000000000.0,
+   "total_cash": 2000000000.0,
+   "total_debt": 20000000000.0,
+   "trailing_pe": 12.5,
+   "market_cap": 50000000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -15.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": -40.0
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": null,
+  "data": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 74,
+    "valuation": 38,
+    "news": 66,
+    "market": 74
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 40,
+    "valuation": 38,
+    "news": 66,
+    "market": 35
+   },
+   "score_reasons": {
+    "fundamentals": "40分：營收與毛利率穩定，現金流尚可。【系統護欄】模型原評74分，因公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%，上限40分。",
+    "valuation": "38分：本益比落在同業區間。",
+    "news": "66分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "35分：大盤均線位置中性。【系統護欄】規則原給74分，因科技／半導體族群正在崩跌（費城半導體指數近5日-8.0%），大盤指數的均線是落後指標，看不出族群層級的衝擊，上限35分。"
+   },
+   "caps": [
+    {
+     "axis": "fundamentals",
+     "from": 74,
+     "to": 40,
+     "why": "公司目前虧損（淨利率為負）；最近一季EPS低於市場預期15.0%"
+    },
+    {
+     "axis": "market",
+     "from": 74,
+     "to": 35,
+     "why": "科技／半導體族群正在崩跌（費城半導體指數近5日-8.0%），大盤指數的均線是落後指標，看不出族群層級的衝擊"
+    }
+   ]
+  }
+ },
+ {
+  "ticker": "CASE60",
+  "fund": {
+   "name": "CASE60",
+   "sector": "Financial Services",
+   "industry": "Semiconductors",
+   "profit_margins": 0.0,
+   "free_cashflow": 200000000.0,
+   "total_cash": null,
+   "total_debt": 6000000000.0,
+   "trailing_pe": 34.0,
+   "market_cap": 500000000.0,
+   "earnings_history": [
+    {
+     "surprise_pct": -10.0
+    }
+   ]
+  },
+  "dossier": {
+   "momentum": {
+    "ret_20d_pct": null
+   }
+  },
+  "health": {
+   "side_5d": {
+    "費城半導體指數": -8.0
+   }
+  },
+  "pct_from_high": -60.0,
+  "data": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 58,
+    "valuation": 74,
+    "news": 88,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "營收與毛利率穩定，現金流尚可。",
+    "valuation": "本益比落在同業區間。",
+    "news": "近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "大盤均線位置中性。"
+   }
+  },
+  "expected": {
+   "scores": {
+    "technical": 74,
+    "fundamentals": 58,
+    "valuation": 45,
+    "news": 88,
+    "market": 47
+   },
+   "score_reasons": {
+    "fundamentals": "58分：營收與毛利率穩定，現金流尚可。",
+    "valuation": "45分：本益比落在同業區間。【系統護欄】模型原評74分，因價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱，上限45分。",
+    "news": "88分：近期標題偏中性。",
+    "technical": "15分：趨勢過濾未通過。",
+    "market": "47分：大盤均線位置中性。"
+   },
+   "caps": [
+    {
+     "axis": "valuation",
+     "from": 74,
+     "to": 45,
+     "why": "價格近期重挫（近20日-40%以上或距高點-60%以上），分析師目標價與預估多半已過時，「便宜」尚未被市場價格驗證，也可能是價值陷阱"
+    }
+   ]
+  }
+ }
+]
