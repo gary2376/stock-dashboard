@@ -7,7 +7,8 @@ def test_empty_watchlist_shows_first_run_card_and_focuses_ticker_input(empty_app
     assert "還沒有任何股票" in text
     assert "TSLA" in text and "2330" in text
     assert "claude / codex CLI" in text
-    assert "docs/ENGINES.md" in text
+    assert "設定說明" in text
+    assert "docs/ENGINES.md" in (card.locator("a").first.get_attribute("href") or "")
     assert "./scripts/run_demo.sh" in text
     assert "docker compose up" in text
     assert "watchlist 是空的" not in text

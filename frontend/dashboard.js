@@ -24,17 +24,6 @@ function plClass(v) {
   if (v === null || v === undefined) return "";
   return v >= 0 ? "pl-pos" : "pl-neg";
 }
-// s.name/holding.date are external data (yfinance/TWSE company names, user-typed dates) —
-// escape before dropping them into innerHTML.
-function escapeHtml(str) {
-  if (str === null || str === undefined) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function holdingRow(s, totalValue) {
   const h = s.holding;
@@ -65,7 +54,9 @@ function renderPie(withShares, totalValue) {
     data.push(rest.reduce((sum, s) => sum + s.holding_value, 0));
   }
   const colors = labels.map((_, i) => CATEGORICAL[i % CATEGORICAL.length]);
-  new Chart(document.getElementById("pieChart"), {
+  const pieCanvas = document.getElementById("pieChart");
+  Chart.getChart(pieCanvas)?.destroy();
+  new Chart(pieCanvas, {
     type: "doughnut",
     data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: "#1a1a19", borderWidth: 2 }] },
     options: {
@@ -82,7 +73,9 @@ function renderBar(holdings) {
   const labels = sorted.map(s => s.name);
   const data = sorted.map(s => s.holding_pl_pct ?? 0);
   const colors = data.map(v => (v >= 0 ? GOOD : BAD));
-  new Chart(document.getElementById("barChart"), {
+  const barCanvas = document.getElementById("barChart");
+  Chart.getChart(barCanvas)?.destroy();
+  new Chart(barCanvas, {
     type: "bar",
     data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 4 }] },
     options: {

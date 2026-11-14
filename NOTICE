@@ -14,4 +14,5 @@ Copyright (c) 2026 gary2376 — MIT 授權（見 LICENSE）
 - Google News／Yahoo RSS 的標題依其各自條款（個人、非商業）取得。
 
 示範資料集（scripts/load_demo.py）完全是合成、虛構的，專案不內含任何真實行情資料。
+範例策略筆記 examples/strategy/新手入門策略.md 為本專案原創內容，與專案其他部分一樣以 MIT 授權釋出。
 本專案與 TradingView、Yahoo、Google、Anthropic、OpenAI 皆無隸屬或背書關係。

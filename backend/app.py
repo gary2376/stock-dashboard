@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import copy
 import json
 import logging
@@ -74,7 +75,16 @@ BACKUPS_DIR = DATA_DIR / "backups"
 BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
 
 logger = logging.getLogger(__name__)
-app = FastAPI(title="Stock Dashboard")
+
+
+@contextlib.asynccontextmanager
+async def _lifespan(_app):
+    """Only a real server start (a lifespan-aware client) seeds a brand-new data dir; see backend/seed.py."""
+    seed.maybe_seed()
+    yield
+
+
+app = FastAPI(title="Stock Dashboard", lifespan=_lifespan)
 
 MAX_BODY_BYTES = 5 * 1024 * 1024  # import is the only legitimately large request
 
@@ -97,12 +107,6 @@ async def same_origin_writes(request: Request, call_next):
         if urlparse(origin).netloc.lower() != (request.headers.get("host") or "").lower():
             return JSONResponse({"detail": "來源不符"}, status_code=403)
     return await call_next(request)
-
-
-@app.on_event("startup")
-def _first_run_seed():
-    """Only the real server start (not a bare TestClient) seeds a brand-new data dir; see backend/seed.py."""
-    seed.maybe_seed()
 
 
 @app.get("/api/info")
@@ -128,13 +132,13 @@ def _run_refresh(kind: str, script: str, timeout: int, args=()):
             [sys.executable, str(ROOT / "scripts" / script), *args],
             cwd=ROOT, capture_output=True, text=True, timeout=timeout,
         )
-        lines = [l for l in result.stdout.strip().splitlines() if l]
+        lines = [_redact_paths(l) for l in result.stdout.strip().splitlines() if l]
         summary = lines[-15:] if lines else ["(無輸出)"]
         success = result.returncode == 0
         if not success:
             summary.append(f"exit code {result.returncode}")
     except Exception as e:
-        summary = [f"失敗：{e}"]
+        summary = [_redact_paths(f"失敗：{e}")]
     with _refresh_lock:
         _refresh_state[kind]["running"] = False
         _refresh_state[kind]["last_run"] = datetime.now().isoformat(timespec="seconds")
@@ -153,10 +157,41 @@ def _start_refresh(kind: str, script: str, timeout: int, args=()):
     threading.Thread(target=_run_refresh, args=(kind, script, timeout, tuple(args)), daemon=True).start()
 
 
+def _redact_paths(text) -> str:
+    """Strip local paths (repo, its parent, the home dir) and any API key from text that reaches the browser."""
+    s = llm_engines.redact(text)
+    home = os.path.expanduser("~")
+    for p in sorted({str(ROOT), str(ROOT.parent), home}, key=len, reverse=True):
+        if p and p not in ("/", "~"):
+            s = s.replace(p, "…")
+    return s
+
+
+_lists_lock = threading.Lock()  # tickers.json / favorites.json read-modify-write
+
+
+def _load_json_file(path: Path, kind: type):
+    """Parsed JSON of the expected top-level type, or an empty one. A corrupt file is moved aside to
+    '<name>.corrupt-<UTC stamp>' (never lost) and treated as empty instead of 500-ing every page."""
+    if not path.exists():
+        return kind()
+    try:
+        data = json.loads(path.read_text())
+        if isinstance(data, kind):
+            return data
+    except ValueError:
+        pass
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    try:
+        os.replace(path, path.with_name(f"{path.name}.corrupt-{stamp}"))
+        logger.warning("%s was not valid; moved aside to %s.corrupt-%s and treated as empty", path.name, path.name, stamp)
+    except OSError:
+        logger.warning("%s is not valid and could not be moved aside; treated as empty", path.name)
+    return kind()
+
+
 def _tickers() -> list[str]:
-    if not TICKERS_FILE.exists():
-        return []
-    return json.loads(TICKERS_FILE.read_text())
+    return _load_json_file(TICKERS_FILE, list)
 
 
 def _save_tickers(tickers: list[str]) -> None:
@@ -164,9 +199,7 @@ def _save_tickers(tickers: list[str]) -> None:
 
 
 def _favorites() -> list[str]:
-    if not FAVORITES_FILE.exists():
-        return []
-    return json.loads(FAVORITES_FILE.read_text())
+    return _load_json_file(FAVORITES_FILE, list)
 
 
 def _save_favorites(favorites: list[str]) -> None:
@@ -195,9 +228,7 @@ def _holdings() -> dict:
     """{ticker: [lot, ...]}. Transparently upgrades the old one-lot-per-ticker file format (and
     list entries missing an id, from pre-migration data) and writes the upgraded shape straight
     back, so the migration only happens once and ids stay stable across reads."""
-    if not HOLDINGS_FILE.exists():
-        return {}
-    raw = json.loads(HOLDINGS_FILE.read_text())
+    raw = _load_json_file(HOLDINGS_FILE, dict)
     needs_rewrite = any(
         not isinstance(v, list) or any(not isinstance(l, dict) or not l.get("id") for l in v)
         for v in raw.values()
@@ -329,49 +360,64 @@ def add_ticker(body: TickerIn):
     tickers = _tickers()
     if raw in tickers:
         raise HTTPException(409, f"{raw} 已在觀察清單")
-    ticker = dp.resolve_ticker(raw)
+    ticker = dp.resolve_ticker(raw)  # network: deliberately outside the lock
     if ticker is None:
         raise HTTPException(404, f"查無 {raw} 的股價資料，確認代號是否正確（美股代號或台股代號皆可，如 2330）")
-    if ticker in tickers:
-        raise HTTPException(409, f"{ticker} 已在觀察清單")
-    tickers.append(ticker)
-    _save_tickers(tickers)
-    # fire-and-forget: codex analysis takes ~20s, don't block the request
-    subprocess.Popen(
-        [sys.executable, str(ROOT / "scripts" / "generate_analysis.py"), ticker],
-        cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-    )
+    with _lists_lock:
+        tickers = _tickers()
+        if ticker in tickers:
+            raise HTTPException(409, f"{ticker} 已在觀察清單")
+        tickers.append(ticker)
+        _save_tickers(tickers)
+    _start_analysis_best_effort(ticker)
     return {"tickers": tickers}
+
+
+def _start_analysis_best_effort(ticker: str) -> None:
+    """Kick off the new ticker's analysis through the shared (one at a time, timed) refresh runner.
+    Adding a ticker never fails because of it: a run in progress (409), no AI engine, or any error is skipped."""
+    if config.DEMO:
+        return
+    try:
+        ga.pick_engine()
+        _start_refresh("analysis", "generate_analysis.py", timeout=5400, args=[ticker])
+    except HTTPException as e:
+        logger.debug("analysis for %s not started: %s", ticker, e.detail)
+    except Exception as e:  # noqa: BLE001
+        logger.debug("analysis for %s not started: %s", ticker, e)
 
 
 @app.delete("/api/tickers/{ticker}")
 def remove_ticker(ticker: str):
     ticker = _require_valid_ticker(ticker)
-    tickers = _tickers()
-    if ticker not in tickers:
-        raise HTTPException(404, f"{ticker} 不在觀察清單")
-    tickers.remove(ticker)
-    _save_tickers(tickers)
+    with _lists_lock:
+        tickers = _tickers()
+        if ticker not in tickers:
+            raise HTTPException(404, f"{ticker} 不在觀察清單")
+        tickers.remove(ticker)
+        _save_tickers(tickers)
     return {"tickers": tickers}
 
 
 @app.post("/api/favorites/{ticker}")
 def add_favorite(ticker: str):
     ticker = _require_valid_ticker(ticker)
-    favorites = _favorites()
-    if ticker not in favorites:
-        favorites.append(ticker)
-        _save_favorites(favorites)
+    with _lists_lock:
+        favorites = _favorites()
+        if ticker not in favorites:
+            favorites.append(ticker)
+            _save_favorites(favorites)
     return {"favorites": favorites}
 
 
 @app.delete("/api/favorites/{ticker}")
 def remove_favorite(ticker: str):
     ticker = _require_valid_ticker(ticker)
-    favorites = _favorites()
-    if ticker in favorites:
-        favorites.remove(ticker)
-        _save_favorites(favorites)
+    with _lists_lock:
+        favorites = _favorites()
+        if ticker in favorites:
+            favorites.remove(ticker)
+            _save_favorites(favorites)
     return {"favorites": favorites}
 
 
@@ -769,7 +815,7 @@ def _pins_call(fn, *a, **kw):
     except pins.PinRateLimited as e:
         raise HTTPException(429, str(e))
     except pins.PinCompileFailed as e:
-        raise HTTPException(502, str(e))
+        raise HTTPException(502, _redact_paths(e))
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -1070,7 +1116,7 @@ def refresh_analysis(body: Optional[RefreshAnalysisIn] = None):
     try:
         ga.pick_engine()  # no AI engine: say so now instead of starting a doomed subprocess
     except RuntimeError as e:
-        raise HTTPException(503, str(e))
+        raise HTTPException(503, _redact_paths(e))
     _start_refresh("analysis", "generate_analysis.py", timeout=5400, args=chosen)
     return {"status": "started", "tickers": chosen or None}
 
@@ -1190,7 +1236,7 @@ def chat(body: ChatIn):
         # holdings. A capability reduction, not a security boundary (see README).
         engine = ga.pick_engine(prefer="claude")
     except RuntimeError as e:
-        raise HTTPException(503, str(e))
+        raise HTTPException(503, _redact_paths(e))
 
     # one chat at a time; a second request fails fast instead of queueing behind a 3-minute LLM call
     if not _chat_lock.acquire(blocking=False):

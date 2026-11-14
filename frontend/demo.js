@@ -1,7 +1,7 @@
 (function setupDemoMode() {
   "use strict";
 
-  const DEMO_MESSAGE = "示範模式：以下全是合成資料（示範公司 A/B/C），不是真實股票；AI 分析、聊天、更新與策略檢查已停用。";
+  const DEMO_MESSAGE = "示範模式：以下全是合成資料（示範公司 A–E），不是真實股票；AI 分析、聊天、更新與策略檢查已停用。";
   const DISABLED_MESSAGE = "示範模式：此功能需要你登入的 AI CLI 或網路資料，已停用";
   const DESCRIPTION_ID = "sdDemoDisabledDescription";
   let infoPromise;

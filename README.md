@@ -38,12 +38,19 @@
 ## 立刻試試（不需要 AI 帳號）
 
 ```bash
-git clone <this-repo> && cd stock_dashboard
-docker compose up            # 或：./scripts/run_demo.sh（需要 Python 3.9+）
+git clone https://github.com/gary2376/stock-dashboard && cd stock-dashboard
+
+# 方法一：Docker（第一次會建置映像，需要一點時間）
+docker compose up
+
+# 方法二：直接用 Python 3.9 以上
+python3 -m venv .venv && .venv/bin/pip install -r backend/requirements.txt
+./scripts/run_demo.sh
+
 # 開 http://127.0.0.1:8013
 ```
 
-示範模式使用**合成資料**（虛構的「示範公司 A–E」），不連網、不呼叫任何 AI；AI 分析、聊天與策略檢查的按鈕會停用，其餘功能（圖表、持倉、固定檢查項目、批次總覽、筆記管理）都能操作。
+示範模式使用**合成資料**（虛構的「示範公司 A–E」），伺服器不連網、不呼叫任何 AI；AI 分析、聊天與策略檢查的按鈕會停用，其餘功能（圖表、持倉、固定檢查項目、批次總覽、筆記管理）都能操作。Docker 映像**只有示範模式**（裡面沒有 AI 工具）；要用真實資料請用下面的 `run_local.sh`。示範資料會產生在 `data_demo/`（已被 git 忽略）。
 
 ## 特色
 
@@ -101,12 +108,12 @@ AI 功能支援四種引擎，只要有一種就行：
 ## 在自己的電腦上使用真實資料
 
 ```bash
-cd backend && pip install -r requirements.txt && cd ..
+python3 -m venv .venv && .venv/bin/pip install -r backend/requirements.txt   # 用 requirements.txt，不要用 requirements-lock.txt
 ./scripts/run_local.sh               # http://127.0.0.1:8013 ，只綁本機
 ```
 
 - AI 功能需要上面四種引擎之一；沒有也能用圖表、持倉、釘選規則（由程式判斷、不需 AI）與示範模式。
-- 第一次打開是空的：在首頁輸入代號按「新增」；把你的筆記（`.md`／`.txt`）放進網頁「策略筆記」；在個股頁輸入持倉；按「更新基本面分析」。想先看畫面，先跑示範模式。
+- 第一次啟動會自動放入一檔 **NVDA** 和一份範例策略筆記（想從空白開始：`SD_NO_SEED=1 ./scripts/run_local.sh`）。要新增股票：在首頁輸入代號按「新增」（美股如 `TSLA`，台股如 `2330`，會自動嘗試 `.TW`／`.TWO`）；把你的筆記（`.md`／`.txt`）放進網頁「策略筆記」；在個股頁輸入持倉；按「更新基本面分析」。想先看畫面，先跑示範模式。
 - 想從手機連：用 `scripts/run_tailscale.sh`（只綁 Tailscale 網卡）。**不要**用 `--host 0.0.0.0`，這個服務沒有登入驗證。
 
 ## 資料與隱私
@@ -127,10 +134,10 @@ cd backend && pip install -r requirements.txt && cd ..
 ## 開發
 
 ```bash
-python -m pytest -q tests           # 400+ 個測試，不需要網路
+pip install pytest httpx && python -m pytest -q tests   # 約 550 個測試，不需要網路；瀏覽器 e2e 預設略過，見 tests/e2e/README.md
 ```
 
 - 後端：FastAPI + yfinance；前端：原生 HTML/JS（無框架）＋ Lightweight Charts v4。
-- CI 設定在 `.gitlab-ci.yml`（Python 3.9／3.11／3.12）。
+- CI：`.github/workflows/ci.yml`（Python 3.9／3.11／3.12 的單元測試＋前端語法檢查）。
 - 完整功能說明與資料檔格式：[docs/DETAILS.zh-TW.md](docs/DETAILS.zh-TW.md)。
 - 授權：[MIT](LICENSE)；第三方聲明見 [NOTICE](NOTICE)。

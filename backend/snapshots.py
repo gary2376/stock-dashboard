@@ -47,9 +47,24 @@ def snapshot_of(data: dict, *, generated_at: str, market_date: str | None, engin
     return snap
 
 
+KEEP_PER_TICKER = 200
+KEEP_RUNS = 500
+
+
+def _prune(directory, keep: int) -> None:
+    """Best-effort: keep the newest `keep` *.json files (names are UTC timestamps, so name order = age)."""
+    try:
+        files = sorted(p.name for p in directory.glob("*.json"))
+        for name in files[:-keep] if len(files) > keep else []:
+            (directory / name).unlink()
+    except OSError:
+        pass
+
+
 def save_snapshot(snap: dict) -> None:
-    write_text_exclusive(HISTORY_DIR / snap["ticker"] / f"{snap['generated_at']}.json",
-                      json.dumps(snap, ensure_ascii=False, indent=2))
+    d = HISTORY_DIR / snap["ticker"]
+    write_text_exclusive(d / f"{snap['generated_at']}.json", json.dumps(snap, ensure_ascii=False, indent=2))
+    _prune(d, KEEP_PER_TICKER)
 
 
 def save_run(run_id: str, requested: list[str], ok: list[str], failed: list[str],
@@ -61,3 +76,4 @@ def save_run(run_id: str, requested: list[str], ok: list[str], failed: list[str]
         "schema_version": SCHEMA_VERSION, "run_id": run_id, "explicit_tickers": explicit,
         "requested": requested, "ok": ok, "failed": failed, "skipped": skipped,
     }, ensure_ascii=False, indent=2))
+    _prune(HISTORY_DIR / "_runs", KEEP_RUNS)

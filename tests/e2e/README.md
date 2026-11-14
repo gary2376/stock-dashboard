@@ -4,21 +4,22 @@
 
 一般的 `pytest` 與 CI 預設會略過整個 E2E 套件。只有同時設定 `SD_E2E=1` 且可匯入 Playwright 時才會執行。
 
-## 安裝
+## 安裝與執行
 
-先安裝專案本身的後端相依套件，再安裝測試工具與 Chromium：
+在 repo 根目錄依序執行：
 
 ```bash
-pip install playwright pytest
+pip install -r backend/requirements.txt pytest httpx playwright
 playwright install chromium
+SD_E2E=1 python -m pytest tests/e2e -q
 ```
 
-測試會先嘗試使用系統 Chrome；若找不到，會改用 Playwright 安裝的 Chromium。
+測試會先嘗試啟動系統安裝的 Google Chrome；找不到時，會自動改用 `playwright install chromium` 裝的 Chromium。
 
-## 執行
+## 沒有設定 SD_E2E=1 的時候
 
-```bash
-SD_E2E=1 pytest tests/e2e -q
-```
+沒有設定 `SD_E2E=1`（或沒有安裝 Playwright）時，整個 E2E 套件會被標示為略過（skipped），不會失敗。所以一般的 `python -m pytest -q tests` 與 CI 都不會跑到它們。
 
-若本機不能綁定 loopback 埠，uvicorn fixture 會在啟動階段失敗並顯示伺服器日誌。
+## 疑難排解
+
+若本機不能綁定 loopback 埠，uvicorn fixture 會在啟動階段失敗，並顯示伺服器日誌。

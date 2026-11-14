@@ -53,18 +53,6 @@ if (window.sdDemo?.onReady) {
   });
 }
 
-// LLM-generated analysis text (and anything else sourced outside our own code) goes through
-// innerHTML templates below — escape it so a weird company name or adversarial model output
-// can't inject markup.
-function escapeHtml(str) {
-  if (str === null || str === undefined) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function showStatus(msg, isError = false) {
   statusMsg.textContent = msg;
@@ -355,7 +343,7 @@ async function load() {
     return true;
   });
   if (!stocks.length) {
-    grid.innerHTML = `<div class="empty">${q ? `找不到符合「${q}」的股票` : "這個分類下沒有股票"}</div>`;
+    grid.innerHTML = `<div class="empty">${q ? `找不到符合「${escapeHtml(q)}」的股票` : "這個分類下沒有股票"}</div>`;
     return;
   }
   const sorted = applySort(stocks);

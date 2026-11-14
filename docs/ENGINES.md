@@ -14,9 +14,15 @@
 
 1. 設了 `ANALYSIS_ENGINE`（或 `data/llm.json` 的 `engine`）就用它，值為 `claude`、`codex`、`openai`、`command` 其中一個。
 2. 沒設的時候自動偵測，順序：`codex`（在 PATH 上）→ `claude`（在 PATH 上）→ `openai`（有 `LLM_BASE_URL`）→ `command`（有 `LLM_COMMAND`）。
-3. 四種都不可用時，會印出設定說明。
+3. 四種都不可用時，直接執行 script 會印出設定說明；在網頁上按分析、策略檢查、釘選規則編譯或聊天相關的按鈕，則會回覆 HTTP 503，內容就是這份設定說明（指向本文件）。
 
-右上角的 `/api/info` 會回報目前引擎的名稱、是 CLI 還是 API、以及 API 的主機名稱（不含網址路徑和金鑰），不會對外連線。
+要確認目前選到哪一種引擎，可以在伺服器執行時用 curl 查詢：
+
+```bash
+curl http://127.0.0.1:8013/api/info
+```
+
+回應裡的 `engine` 會顯示引擎名稱、是否可用、是 CLI 還是 API，以及 API 的主機名稱（不含網址路徑和金鑰）。這個查詢不會對外連線。
 
 ## 環境變數
 
@@ -28,6 +34,7 @@
 | `LLM_API_KEY` | API 金鑰，**只能**用環境變數提供 |
 | `LLM_TEMPERATURE` | 選填，例如 `0.2` |
 | `LLM_COMMAND` | `command` 引擎的命令列（用 shell 風格解析，不經過 shell） |
+| `ANALYSIS_WORKERS` | 分析同時處理幾檔股票，預設 `3`。用 API 引擎遇到速率限制時可調低 |
 | `LLM_ALLOW_INSECURE` | 設為 `1` 才允許用明文 `http://` 連到非本機的主機（不建議） |
 
 環境變數的優先順序高於設定檔。
@@ -40,6 +47,8 @@
 {"engine": "openai", "base_url": "http://localhost:11434/v1", "model": "llama3.1"}
 ```
 
+（`llama3.1` 只是範例，請改成你實際使用的模型。）
+
 可用欄位：`engine`、`base_url`、`model`、`command`。**不要把金鑰寫進這個檔案**：裡面的 `api_key` 會被忽略並在日誌留下一次警告。
 檔案壞掉（不是合法 JSON）時會被忽略。
 
@@ -50,7 +59,7 @@
 ```bash
 export LLM_BASE_URL=https://api.x.ai/v1
 export LLM_API_KEY=你的金鑰
-export LLM_MODEL=grok-4        # 用你帳號可用的模型名稱
+export LLM_MODEL=grok-4        # 範例，請改成你帳號可用的模型
 scripts/run_local.sh
 ```
 
@@ -59,7 +68,7 @@ scripts/run_local.sh
 ```bash
 export LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
 export LLM_API_KEY=你的金鑰
-export LLM_MODEL=gemini-2.5-pro
+export LLM_MODEL=gemini-2.5-pro   # 範例，請改成你帳號可用的模型
 ```
 
 ### OpenRouter
@@ -67,7 +76,7 @@ export LLM_MODEL=gemini-2.5-pro
 ```bash
 export LLM_BASE_URL=https://openrouter.ai/api/v1
 export LLM_API_KEY=你的金鑰
-export LLM_MODEL=anthropic/claude-sonnet-4   # 任一 OpenRouter 模型代號
+export LLM_MODEL=anthropic/claude-sonnet-4   # 範例，請改成你帳號可用的模型代號
 ```
 
 ### Ollama（本機）
@@ -75,7 +84,7 @@ export LLM_MODEL=anthropic/claude-sonnet-4   # 任一 OpenRouter 模型代號
 ```bash
 ollama pull llama3.1
 export LLM_BASE_URL=http://localhost:11434/v1
-export LLM_MODEL=llama3.1                    # 本機不需要金鑰
+export LLM_MODEL=llama3.1                    # 範例，請改成你已下載的模型；本機不需要金鑰
 ```
 
 LM Studio 同理，預設網址是 `http://localhost:1234/v1`。
@@ -115,7 +124,7 @@ export LLM_COMMAND='my-llm-cli --model foo'   # prompt 從 stdin 進，答案從
 
 | 症狀 | 處理 |
 | --- | --- |
-| 找不到可用的 AI 引擎 | 依訊息設定四種方式之一 |
+| 網頁按鈕回覆 503「找不到可用的 AI 引擎」 | 依訊息設定四種方式之一，再用 `curl http://127.0.0.1:8013/api/info` 確認 |
 | `API 回傳 HTTP 401` | 金鑰不對或沒設 `LLM_API_KEY` |
 | `API 回傳 HTTP 404` | `LLM_BASE_URL` 少了 `/v1`（或對應的路徑），或模型名稱不存在 |
 | `API 連線失敗` | 網址/埠不對，或本機的 Ollama / LM Studio 沒啟動 |

@@ -107,17 +107,6 @@ function tradeSignalHtml(text) {
 function displayTicker(t) {
   return t.replace(/\.(TW|TWO)$/, "");
 }
-// LLM-generated analysis text goes through innerHTML templates — escape it so a weird
-// company name or adversarial model output can't inject markup.
-function escapeHtml(str) {
-  if (str === null || str === undefined) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function hasCompleteScores(scores) {
   return scores && SCORE_KEYS.every(key => typeof scores[key] === "number" && Number.isFinite(scores[key]));
@@ -638,8 +627,12 @@ function setChartWindow(range) {
 // --- bars (trend sigma / range position) recompute per range via backend --
 
 async function applyRange() {
-  const res = await fetch(`/api/stocks/${ticker}/history?range=${currentRange}`);
-  const data = await res.json();
+  let data;
+  try {
+    data = await fetchJson(`/api/stocks/${encodeURIComponent(ticker)}/history?range=${currentRange}`);
+  } catch (_) {
+    return;  // keep the previous bars; the chart itself needs no new data
+  }
   setChartWindow(currentRange); // pan/zoom only; candles + trend lines stay as-is
   document.getElementById("rangeLabel").textContent = `近${RANGE_LABEL[currentRange]}區間位置`;
   document.getElementById("rangePct").textContent = `${data.range_position.pct}%`;
@@ -652,37 +645,52 @@ async function applyRange() {
   document.getElementById("trendMarker").style.left = `${sigmaToX(data.trend.sigma)}%`;
 }
 
+async function fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 async function init() {
   if (!ticker) {
     root.innerHTML = `<div class="empty">缺少股票代號</div>`;
     return;
   }
-  // fetch the longest window once so the chart always holds the full series;
-  // switching range below only adjusts which slice of it is visible.
-  const res = await fetch(`/api/stocks/${ticker}?range=3y`);
-  if (!res.ok) {
-    root.innerHTML = `<div class="empty">找不到 ${ticker}</div>`;
-    return;
-  }
-  const full = await res.json();
-  const initial = await (await fetch(`/api/stocks/${ticker}/history?range=${currentRange}`)).json();
-  full.trend = initial.trend;
-  full.range_position = initial.range_position;
+  try {
+    // fetch the longest window once so the chart always holds the full series;
+    // switching range below only adjusts which slice of it is visible.
+    const res = await fetch(`/api/stocks/${encodeURIComponent(ticker)}?range=3y`);
+    if (res.status === 404 || res.status === 400) {
+      root.innerHTML = `<div class="empty">找不到 ${escapeHtml(ticker)}</div>`;
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const full = await res.json();
+    const initial = await fetchJson(`/api/stocks/${encodeURIComponent(ticker)}/history?range=${currentRange}`);
+    full.trend = initial.trend;
+    full.range_position = initial.range_position;
 
-  document.title = `${full.name} ${displayTicker(full.ticker)} - 選股系統`;
-  currentHolding = full.holding || null;
-  root.innerHTML = shell(full);
-  renderRangeButtons();
-  wireIndicatorToggles();
-  wireDrawButtons();
-  wireStarButton();
-  wireHoldingPanel();
-  renderChart(full.candles);
-  renderScoreRadar(full.analysis?.scores);
-  applyHoldingMarker();
-  wireStrategyCheckPanel();
-  wirePinnedChecksPanel();
-  wireAnalysisRefresh();
+    document.title = `${full.name} ${displayTicker(full.ticker)} - 選股系統`;
+    currentHolding = full.holding || null;
+    root.innerHTML = shell(full);
+    renderRangeButtons();
+    wireIndicatorToggles();
+    wireDrawButtons();
+    wireStarButton();
+    wireHoldingPanel();
+    renderChart(full.candles);
+    renderScoreRadar(full.analysis?.scores);
+    applyHoldingMarker();
+    wireStrategyCheckPanel();
+    wirePinnedChecksPanel();
+    wireAnalysisRefresh();
+  } catch (error) {
+    root.replaceChildren();
+    const box = document.createElement("div");
+    box.className = "empty";
+    box.textContent = "載入失敗，請重新整理";
+    root.appendChild(box);
+  }
 }
 
 // --- pinned checks (deterministic, no LLM) -------------------------------
@@ -1483,7 +1491,7 @@ function wireHoldingPanel() {
       showDetailStatus("股數要大於0", true);
       return;
     }
-    const res = await fetch(`/api/holdings/${ticker}`, {
+    const res = await fetch(`/api/holdings/${encodeURIComponent(ticker)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date, price, shares }),
@@ -1501,7 +1509,7 @@ function wireHoldingPanel() {
   if (clearAllBtn) {
     clearAllBtn.addEventListener("click", async () => {
       if (!confirm("確定清除這檔股票全部的持倉紀錄？")) return;
-      const res = await fetch(`/api/holdings/${ticker}`, { method: "DELETE" });
+      const res = await fetch(`/api/holdings/${encodeURIComponent(ticker)}`, { method: "DELETE" });
       if (!res.ok) {
         showDetailStatus("清除失敗，請重試", true);
         return;
@@ -1513,7 +1521,7 @@ function wireHoldingPanel() {
 
   document.querySelectorAll(".lot-remove-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
-      const res = await fetch(`/api/holdings/${ticker}/${btn.dataset.lotId}`, { method: "DELETE" });
+      const res = await fetch(`/api/holdings/${encodeURIComponent(ticker)}/${btn.dataset.lotId}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
         showDetailStatus(`刪除失敗：${data.detail || res.status}`, true);
@@ -1546,7 +1554,7 @@ function wireStarButton() {
   const btn = document.getElementById("detailStarBtn");
   btn.addEventListener("click", async () => {
     const isFavorite = btn.dataset.favorite === "true";
-    const res = await fetch(`/api/favorites/${ticker}`, { method: isFavorite ? "DELETE" : "POST" });
+    const res = await fetch(`/api/favorites/${encodeURIComponent(ticker)}`, { method: isFavorite ? "DELETE" : "POST" });
     if (!res.ok) return;
     const nowFavorite = !isFavorite;
     btn.dataset.favorite = String(nowFavorite);

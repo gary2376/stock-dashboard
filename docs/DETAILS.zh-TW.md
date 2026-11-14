@@ -1,4 +1,4 @@
-# 詳細說明（繁體中文）
+# 進階參考（繁體中文）
 
 > 這是完整的功能與資料檔說明。快速開始與總覽請看根目錄的 [README](../README.md)。
 
@@ -6,62 +6,84 @@
 >
 > *Research aid only. AI-generated analysis from public data — not investment advice, no guarantee of results, may be wrong or outdated. You are solely responsible for your decisions and risk.*
 
-股票看板：卡片總覽（股價位階 + 獲利兩關檢查 + 可切換時間尺度的區間位置bar + 新增/移除股票 + 美股/台股篩選 + 搜尋 + 排序(含持倉損益) + 關注星號置頂 + 持倉損益 + 手動更新按鈕 + 備份匯出/匯入）＋ 點卡片進詳細頁（TradingView式走勢圖、手動畫趨勢線、bar可切換1個月～三年時間尺度、基本面、Codex或Claude產生的完整投資分析、買入日期/均價標記）＋ **持倉Dashboard**（持倉比重圓餅圖、各檔損益長條圖、總市值/總成本/總損益統計）。
+股票看板：卡片總覽（股價位階、獲利兩關檢查、可切換時間尺度的區間位置 bar、新增／移除股票、美股／台股篩選、搜尋、排序（含持倉損益）、關注星號置頂、持倉損益、手動更新按鈕、備份匯出／匯入），加上點卡片進入的詳細頁（使用 TradingView Lightweight Charts 繪製的走勢圖、手動畫趨勢線、可切換一個月到三年的區間 bar、基本面、AI 產生的完整投資分析、買入日期與均價標記），以及**持倉 Dashboard**（持倉比重圓餅圖、各檔損益長條圖、總市值／總成本／總損益統計）。
+
+## 目前版本新增的功能
+
+- **4 種 AI 引擎**：`codex`、`claude`、任何 OpenAI 相容的 API，或自訂命令列程式。沒有 `claude` 或 `codex` 也能用，設定方式見 [ENGINES.md](ENGINES.md)。
+- **策略筆記網頁**：在網頁上上傳、貼上、刪除自己的策略筆記。**策略檢查**會把筆記規則對照目前事實，並分成「現在」與「買入當時」兩個範圍。
+- **固定檢查項目（釘選規則）**：用白話文字寫規則，編譯並經你確認後，每次都由程式計算結果，不再問模型。
+- **批次總覽**（`overview.html`）：一次對多檔股票跑策略檢查，用矩陣比較。
+- **單檔與多檔更新分析**：個股頁可只更新這一檔，首頁可勾選幾檔一起更新，並顯示預估成本。
+- **聊天泡泡**：畫面右下角的 AI 對話，可以問關於持倉與分析的問題。
+- **同意對話框與導覽**：第一次使用會先請你同意資料會送給 AI 服務，之後每一頁有簡短的導覽，可隨時重播。
+- **示範模式**：`STOCK_DASHBOARD_DEMO=1`（或 `./scripts/run_demo.sh`、`docker compose up`），使用完全虛構的資料，不連網、不呼叫 AI。
+- **第一次啟動的種子資料**：全新的 `data/` 在第一次啟動時，會自動放入 NVDA 與一份範例策略筆記，讓你一開啟就有東西可看。設定 `SD_NO_SEED=1` 可以關閉。
 
 ## 架構
 
-- `backend/` — FastAPI + yfinance。股價/K線/基本面寫到`data/price_cache/{TICKER}.json`磁碟快取，一般請求都直接讀這份檔案，不會每次都打yfinance；只有全新加入、還沒快取過的股票才會即時打一次並順便寫入快取。`POST/DELETE /api/tickers`管理觀察清單，新增時自動嘗試`.TW`/`.TWO`解析台股代號，台股名稱另外查TWSE/TPEx開放資料拿中文簡稱。`POST /api/refresh/prices`、`POST /api/refresh/analysis`背景執行對應script更新快取，`GET /api/refresh/status`查進度。StaticFiles把`frontend/`掛在根目錄，一個指令啟動前後端。
-- `frontend/` — 純HTML/CSS/JS，無框架。`index.html`卡片總覽，上方獨立一區「更新股價／更新基本面分析」按鈕（跟篩選/新增分開放，不會擠在一起）。`detail.html`+TradingView `lightweight-charts`畫K線圖，進頁面抓一次完整K線資料，之後切換時間尺度只是調整x軸可視窗格、不重抓K線不重建圖表，畫好的趨勢線（射線）也不會消失；位階/區間bar的數字仍會依新時間尺度打一次輕量API重算，但那不是K線資料，也不會動到圖表本身。
-- `data/tickers.json` — 觀察清單，可在網頁上加/刪，或直接編輯這份檔案。**不進版控**（見下方「資料與隱私」），全新clone下來是空的。
-- `data/favorites.json` — 特別關注清單，卡片右上角星號控制，`POST/DELETE /api/favorites/{ticker}`，關注的股票不管排序選什麼都固定置頂。**不進版控**。
-- `data/price_cache/{TICKER}.json` — 股價K線+基本面磁碟快取，`refresh_prices.py`負責刷新。**不進版控**（天天變動、資料量也不小）。
-- `data/analysis/{TICKER}.json` — Codex或Claude產生的質化分析，卡片與詳細頁都讀這份快取。**不進版控**（是個人觀察清單的衍生內容）。
-- `data/holdings.json` — 持倉，每檔股票可記多筆買入交易（日期+均價+股數，股數選填），`POST /api/holdings/{ticker}`新增一筆、`DELETE /api/holdings/{ticker}/{lot_id}`刪單筆、`DELETE /api/holdings/{ticker}`清全部，卡片跟detail頁顯示的是加權平均成本算出的損益%，有填股數的話還會算損益金額跟目前市值。**不進版控**。
-- `data/backups/` — 按網頁「匯出備份」把`tickers`/`favorites`/`holdings`/`analysis`打包成一個JSON，存一份在這裡＋觸發瀏覽器下載一份。`GET /api/backup/export`、`POST /api/backup/import`。**資料夾本身進版控**（clone下來就有這個資料夾，裡面附一份說明），裡面的`*.json`備份檔**不進版控**。
-- `scripts/refresh_prices.py` — 重新打一輪yfinance，刷新`data/price_cache/`。快、便宜，設計給「常跑」。
-- `scripts/generate_analysis.py` — 呼叫`codex exec`或`claude -p`（自動偵測，見下方「基本面分析引擎」），餵真實數字給LLM當事實依據，產生`data/analysis/`的質化分析。慢（每檔約1~2分鐘，預設3檔並行，可用`ANALYSIS_WORKERS`調整）、也比較貴，設計給「不用常跑」。**需要本機裝好且登入`codex`或`claude` CLI其中一個**，沒有的話CLI直接跑這支script或按網頁「更新基本面分析」按鈕都會印出清楚的安裝指示並跳過，其他功能不受影響；但新增股票時自動背景觸發的那次呼叫輸出有刻意丟棄（避免洗版），裝CLI前新增的股票不會自動生出分析，之後補裝好CLI再手動跑一次script或按按鈕即可。
+- `backend/`：FastAPI + yfinance。股價、K 線與基本面寫到 `data/price_cache/{TICKER}.json` 磁碟快取，一般請求直接讀這份檔案，不會每次都打 yfinance；只有全新加入、還沒快取過的股票才會即時抓一次並寫入快取。`POST/DELETE /api/tickers` 管理觀察清單，新增時自動嘗試 `.TW`／`.TWO` 解析台股代號，台股名稱另外查 TWSE／TPEx 開放資料取得中文簡稱。`POST /api/refresh/prices`、`POST /api/refresh/analysis` 在背景執行對應的 script 來更新，`GET /api/refresh/status` 查進度。`frontend/` 由 StaticFiles 掛在根目錄，一個指令就能啟動前後端。
+- `frontend/`：純 HTML／CSS／JS，沒有框架。`index.html` 是卡片總覽，上方獨立一區放「更新股價」「更新基本面分析」按鈕（與篩選、新增分開）。`detail.html` 使用 TradingView `lightweight-charts` 畫 K 線圖：進頁面時抓一次完整 K 線，之後切換時間尺度只是調整 x 軸可視範圍，不重抓資料、不重建圖表，畫好的趨勢線（射線）也不會消失；位階與區間 bar 的數字仍會依新的時間尺度呼叫一次輕量 API 重算，但那不是 K 線資料，也不會動到圖表。
+- `scripts/refresh_prices.py`：重新抓一輪 yfinance，更新 `data/price_cache/`。快、便宜，設計給「常跑」。
+- `scripts/generate_analysis.py`：依所選的 AI 引擎（見下方「基本面分析引擎」與 [ENGINES.md](ENGINES.md)），把真實數字交給模型當事實依據，產生 `data/analysis/` 的質化分析。較慢（實測每檔約 1 分鐘，預設 3 檔並行，可用 `ANALYSIS_WORKERS` 調整），也比較花額度，設計給「不用常跑」。**需要至少設定好一種 AI 引擎**。沒有的話，網頁上的按鈕會回覆 503 與設定說明；直接執行 script 則會印出同樣的說明並跳過，其他功能不受影響。新增股票時自動在背景觸發的那次呼叫，輸出刻意丟棄（避免洗版），所以在設定好引擎之前加入的股票不會自動產生分析，之後設定好再按按鈕或手動執行 script 即可。
+
+## data/ 資料夾一覽
+
+所有個人資料都放在 `data/`（可用環境變數 `STOCK_DASHBOARD_DATA` 改到別的位置），**全部不進版控**，只有 `data/backups/README.md` 例外。
+
+| 路徑 | 內容 |
+| --- | --- |
+| `tickers.json` | 觀察清單，可在網頁上加／刪，也可直接編輯 |
+| `favorites.json` | 特別關注清單（卡片右上角星號），關注的股票不管排序選什麼都固定置頂 |
+| `holdings.json` | 持倉，每檔可記多筆買入交易（日期、均價、選填股數） |
+| `analysis/` | 每檔股票最新一份 AI 投資分析，卡片與詳細頁都讀這裡 |
+| `analysis_history/` | 每次分析的不可變快照與每次更新的執行紀錄，供日後前瞻評估 |
+| `strategy/` | 你的策略筆記（`.md`、`.txt`） |
+| `strategy_checks/` | 策略檢查結果與批次總覽結果 |
+| `pins.json` | 固定檢查項目（釘選規則），檔案權限為 0600 |
+| `llm_usage.jsonl` | 每次 AI 呼叫的 token、費用與秒數紀錄 |
+| `chat_history.json` | 聊天泡泡的對話紀錄 |
+| `llm.json` | 選用的 AI 引擎設定（不可放金鑰，見 [ENGINES.md](ENGINES.md)） |
+| `price_cache/` | 股價、K 線與基本面快取，可隨時刪除，之後會重新抓 |
+| `market_cache/` | 大盤與新聞快取（約 1 小時過期），可隨時刪除 |
+| `profiles/` | 你自己的分析規則（Profile），見下方「自訂分析規則」 |
+| `backups/` | 備份檔。資料夾與 `README.md` 進版控，裡面的 `*.json` 不進版控 |
+| `.seeded` | 標記檔：第一次啟動已放過種子資料，之後不會再放 |
+| `.locks/` | 內部使用的鎖檔，不用管它 |
+
+### 如何重置
+
+先停止伺服器，再刪除 `data/` 底下除了 `data/backups/README.md` 以外的所有東西，下次啟動就會像全新安裝一樣（會再放一次種子資料，除非設了 `SD_NO_SEED=1`）。**刪除前請先匯出備份**，個人資料不進版控，刪了就救不回來。
+
+只想清掉快取而不動你的資料：刪除 `data/price_cache/` 與 `data/market_cache/` 即可，按「更新股價」會重新抓。
 
 ## 資料與隱私
 
-`data/tickers.json`、`data/favorites.json`、`data/analysis/`、`data/holdings.json`、`data/backups/*.json`都是**個人資料**（你的觀察清單、關注、AI生成的投資筆記、持倉、備份檔），已加進`.gitignore`不會被commit。全新clone這個repo下來，`data/`底下這些檔案都不存在（`data/backups/`資料夾本身會在，裡面是空的），網頁會顯示空的watchlist，自己用UI的「新增」慢慢加，或用「匯入備份」一次還原。
-
-**注意**：`.gitignore`只保護之後的commit。如果這個repo在加`.gitignore`之前就commit過真實的`data/`內容，那些檔案仍留在舊commit歷史裡，`git log`、`git show`都翻得到，單純設public不會自動清掉。要徹底清除得用`git filter-repo`之類工具重寫歷史（或乾脆開一個全新repo重新commit一次乾淨版本），再評估是否要設成public。
+`data/` 底下的內容（觀察清單、關注、持倉、AI 產生的投資筆記、策略筆記、備份檔等）都是**個人資料**，已加進 `.gitignore`，不會被 commit。全新 clone 這個 repo 時，`data/` 底下只有 `backups/README.md`；第一次啟動會自動放入 NVDA 與一份範例策略筆記（見上方「目前版本新增的功能」），之後用網頁的「新增」慢慢加自己的股票，或用「匯入備份」一次還原。
 
 ## 環境需求
 
 - Python 3.9+
 - `pip install -r backend/requirements.txt`
-- （選用）[Codex CLI](https://github.com/openai/codex) 或 [Claude Code](https://github.com/anthropics/claude-code) 其中一個，裝好並登入，才能用「更新基本面分析」功能跟`scripts/generate_analysis.py`（兩個都裝也可以，`generate_analysis.py`會自動挑一個，見下方）
-- （選用）[Tailscale](https://tailscale.com/)，只有想用`scripts/run_tailscale.sh`做遠端存取時才需要
+- （選用）一種 AI 引擎，才能用「更新基本面分析」、策略檢查、固定檢查項目的編譯與聊天：已登入的 [Codex CLI](https://github.com/openai/codex) 或 [Claude Code](https://github.com/anthropics/claude-code)，或是 OpenAI 相容的 API、自訂命令列。設定方式見 [ENGINES.md](ENGINES.md)
+- （選用）[Tailscale](https://tailscale.com/)，只有想用 `scripts/run_tailscale.sh` 做遠端存取時才需要
 
 ## 基本面分析引擎
 
-`scripts/generate_analysis.py`（跟網頁的「更新基本面分析」按鈕）會自動偵測本機裝了哪個LLM CLI：
+`scripts/generate_analysis.py` 與網頁的「更新基本面分析」按鈕，會依以下順序決定用哪一種引擎：
 
-- 兩個都裝：預設用`codex`，可以設定環境變數強制指定：`ANALYSIS_ENGINE=claude python3 scripts/generate_analysis.py`
-- 只裝一個：自動用那一個
-- 都沒裝：印出安裝指令並跳過，不影響網頁其他功能
+- 有設定 `ANALYSIS_ENGINE`（或 `data/llm.json` 的 `engine`）就用它，例如 `ANALYSIS_ENGINE=claude python3 scripts/generate_analysis.py`
+- 沒設定時自動偵測：`codex`（在 PATH 上）→ `claude`（在 PATH 上）→ `openai`（有 `LLM_BASE_URL`）→ `command`（有 `LLM_COMMAND`）
+- 四種都不可用：印出設定說明並跳過，網頁按鈕則回覆 503，不影響其他功能
 
-```bash
-# 裝 Codex CLI
-npm install -g @openai/codex
-
-# 或裝 Claude Code
-npm install -g @anthropic-ai/claude-code
-```
-
-Prompt本身是自包含的，不需要額外設定就能跑出結構化的質化分析。如果想要更深的研究品質（护城河/估值的多模組交叉驗證框架），可以另外裝 [AI Berkshire](https://github.com/xbtlin/ai-berkshire)——一套同時相容Claude Code與Codex、MIT授權的價值投資研究skill合集，裝了之後LLM有機會在回答時借用那套方法論（非必要，純加分）：
+完整的設定方式、環境變數與隱私說明請看 [ENGINES.md](ENGINES.md)。最簡單的做法是安裝其中一個 CLI 並登入：
 
 ```bash
-git clone https://github.com/xbtlin/ai-berkshire.git
-cd ai-berkshire
-
-# Codex 用戶
-./scripts/install-codex-skills.sh
-
-# Claude Code 用戶
-./scripts/install-claude-commands.sh
+npm install -g @openai/codex            # Codex CLI
+npm install -g @anthropic-ai/claude-code  # 或 Claude Code
 ```
+
+提示詞本身是自包含的，不需要額外設定就能產生結構化的質化分析。
 
 ## 分析怎麼來的（五維度雷達圖）
 
@@ -70,9 +92,9 @@ cd ai-berkshire
 | 區塊 | 來源 | 誰算分數 |
 | --- | --- | --- |
 | 技術面（+日／週／季線、RSI、操作訊號） | `backend/meta_screen.py`：多重優勢（META）四關篩選：趨勢（Stage2）過濾＋四類優勢，趨勢不成立技術面封頂15分 | Python（規則） |
-| 財報（含最近4季EPS預期vs實際） | yfinance基本面 + `get_earnings_dates` | LLM判斷，再過護欄 |
-| 估值 | 本益比、分析師目標價（**目標價落後股價，不當主要依據**） | LLM判斷，再過護欄 |
-| 新聞時事（公司新聞 + 財報反應 + 公司事件 + 總經／世界時事） | `backend/news_feed.py`：Google News / Yahoo RSS，免金鑰，濾掉報價頁/財報逐字稿等垃圾標題 | LLM判斷 |
+| 財報（含最近4季EPS預期vs實際） | yfinance基本面 + `get_earnings_dates` | LLM 判斷，再過護欄 |
+| 估值 | 本益比、分析師目標價（**目標價落後股價，不當主要依據**） | LLM 判斷，再過護欄 |
+| 新聞時事（公司新聞 + 財報反應 + 公司事件 + 總經／世界時事） | `backend/news_feed.py`：Google News / Yahoo RSS，免金鑰，濾掉報價頁/財報逐字稿等垃圾標題 | LLM 判斷 |
 | 市場方向（指數50/200MA + 近5日／距高點 + 那指/費半） | `backend/market_health.py` | Python（規則） |
 
 - **每個分數都有「為什麼是N分」**：技術面、市場方向的理由由程式依同一套規則直接寫出（不可能跟分數矛盾）；其餘三項由LLM按rubric寫。
@@ -96,7 +118,7 @@ http://127.0.0.1:8013/
 ```
 
 > ⚠️ **這個服務沒有任何登入驗證**，而且會回傳你的持倉與分析。請不要用 `--host 0.0.0.0` 或把埠號對外開放；要從其他裝置連，請用下面的 Tailscale 方式。
-> 另外：聊天與分析會把你的持倉／分析內容送給你自己登入的 `claude` 或 `codex` CLI（也就是送到對應的 AI 服務）。聊天預設優先用 `claude`（已停用所有工具），但這只是降低能力，**不是安全邊界**：`codex` 的唯讀沙盒仍可讀取整個檔案系統。
+> 另外：聊天與分析會把你的持倉與分析內容，送給你所設定的 AI 引擎（CLI 或 API 背後的服務）。使用 `claude` CLI 時已停用所有工具，但這只是降低能力，**不是安全邊界**；`codex` 的唯讀沙盒仍可讀取整個檔案系統。詳見 [SECURITY.md](../SECURITY.md)。
 
 ### 只想從區網/VPN其他裝置連，不想本機WiFi也能連
 
@@ -110,20 +132,20 @@ http://127.0.0.1:8013/
 
 ### 功能說明
 
-- 總覽頁右上角輸入代號按「新增」即可加股票。**美股直接輸入代號（TSLA），台股輸入數字代號即可（2330），系統會自動試`.TW`/`.TWO`解析**，名稱會抓TWSE/TPEx的中文簡稱（如「華城」），不是代號或英文名。卡片右上角滑過去會浮現✕可移除。卡片大字是公司名、小字是代號。
+- 總覽頁右上角輸入代號後按「新增」即可加股票。**美股直接輸入代號（例如 TSLA），台股輸入數字代號即可（例如 2330），系統會自動嘗試 `.TW`／`.TWO`**，名稱會取 TWSE／TPEx 的中文簡稱（例如「華城」）。游標移到卡片右上角會出現 ✕，可以移除。卡片大字是公司名，小字是代號。
 - 搜尋框（header下方）：輸入代號或公司名稱即時篩選卡片。
 - 右上角「全部／美股／台股」切換只看哪個市場；排序下拉可依股價/漲跌%/位階σ/市值等排序，搭配升降冪按鈕。
 - 卡片右上角星號：特別關注的股票固定置頂（不管排序選什麼），detail頁也有一樣的星號，兩邊同步。
 - **「更新股價」／「更新基本面分析」兩個按鈕**（獨立一列，在篩選列下方）：
   - 更新股價：重抓所有觀察中股票的K線+基本面，通常幾秒內完成，按鈕會顯示「更新中…」並停用，完成後自動刷新卡片並顯示上次更新時間。
-  - 更新基本面分析：對所有股票重新呼叫codex或claude（自動偵測，見「基本面分析引擎」）寫投資分析，**每檔約1~2分鐘（3檔並行），21檔大概12~15分鐘**，背景跑不卡頁面，按鈕會停用直到跑完。兩個按鈕各自獨立狀態，同一種更新同時間只能跑一個（重複按會被擋409）。只要有任何一檔失敗（CLI沒裝、逾時、yfinance失敗…），按鈕下方文字會變紅顯示「上次更新失敗」而不是靜靜顯示完成，可以照原因修正後重按。
+  - 更新基本面分析：對所有股票重新呼叫 AI 引擎（見「基本面分析引擎」）撰寫投資分析。**實測每檔約 1 分鐘（預設 3 檔並行），21 檔大約 10 分鐘上下**，實際時間依引擎與網路而定。它在背景執行、不會卡住頁面，按鈕會停用直到跑完。沒有設定任何 AI 引擎時，按鈕會回覆 503 與設定說明。想只更新幾檔，可用首頁的「選擇股票更新分析」勾選，或在個股頁按「更新此股分析」。兩個按鈕各自獨立狀態，同一種更新同時間只能跑一個（重複按會被擋下並回傳 409）。只要有任何一檔失敗（沒有 AI 引擎、逾時、yfinance 失敗…），按鈕下方文字會變紅顯示「上次更新失敗」而不是靜靜顯示完成，可以照原因修正後重按。
 - 點卡片進個股詳細頁，圖表上方按鈕可切一個月/三個月/半年/一年/三年，走勢圖、區間位置bar、長期趨勢位階bar都跟著切換範圍重算，**但底層資料不會被丟掉，只是調整x軸要看哪一段**。
 - 「畫趨勢線」按下後，在圖上點第一個點（橘色標記），再點第二個點——畫出的是**射線**，固定起點沿方向延伸到資料邊界（不是停在第二個點的線段）。完成後自動退出畫線模式。「清除畫線」整張清掉。
-  - 連續點兩下要間隔一點（正常人手速沒問題），太快點（<100ms內）chart函式庫可能吃不到第二下。
+  - 連續點兩下要間隔一點（正常人手速沒問題），太快點（100 毫秒內）圖表函式庫可能吃不到第二下。
 - **持倉（多筆交易紀錄）**：detail頁「我的持倉」面板輸入買入日期、均價，股數選填，按「新增交易」就加一筆，同一檔股票可以分批買、每筆各自記錄、各自能單獨刪除（每筆旁邊的✕）；下方自動算出加權平均成本、總股數、損益%（有填股數的話還會多算損益金額跟目前市值）。勾選「在圖表上顯示買入點」會在走勢圖上每一筆都標一個買入箭頭+一條均價虛線（切換範圍不會消失，邏輯跟趨勢線一樣）；不想看就取消勾選，資料還在，只是不畫。「清除全部」整個刪掉這檔股票的所有交易紀錄。
 - 排序下拉也可以選「持倉損益%」「持倉損益金額」，沒設持倉的股票排序時自動沉到最後。
 - **持倉Dashboard**（總覽頁右上角「📊 持倉Dashboard」）：統計列顯示總市值/總成本/總損益/總報酬率；甜甜圈圖顯示持倉比重（依市值，只算有填股數的持倉，超過7檔自動合併成「其他」）；橫條圖顯示所有有持倉股票的損益%（不需要股數也會顯示）；下面是明細表格，點列可以直接跳到該股票的detail頁。沒有任何持倉紀錄時會顯示空狀態提示。
-- **匯出/匯入備份**（更新按鈕下方獨立一列）：「匯出備份」把觀察清單、關注、持倉、投資分析打包成一個JSON，存一份到`data/backups/`同時觸發瀏覽器下載；「匯入備份」選一個備份檔（剛剛下載的、或`data/backups/`裡任一份）就會整個覆蓋回去，會先跳confirm再執行。這是目前唯一的備份機制——`data/`裡的個人資料都不進版控，電腦出事或資料夾被刪就真的救不回來，建議偶爾匯出一份存到別的地方。
+- **匯出/匯入備份**（更新按鈕下方獨立一列）：「匯出備份」把觀察清單、關注、持倉與投資分析打包成一個 JSON，由瀏覽器下載（`GET /api/backup/export` 是唯讀的，不會寫入伺服器）；要在伺服器端 `data/backups/` 留一份，請呼叫 `POST /api/backup/snapshot`。「匯入備份」選一個備份檔（剛剛下載的，或 `data/backups/` 裡任一份），會先跳出確認對話框，再整個覆蓋回去。匯入會先完整驗證內容、以交易式寫入（要嘛全部成功，要嘛完全不動），並在覆蓋前自動把目前的資料備份成 `data/backups/pre-import-*.json`。`data/` 裡的個人資料不進版控，電腦出事或資料夾被刪就救不回來，建議偶爾匯出一份存到別的地方。
 
 ## CLI方式更新（網頁按鈕已可做到一樣的事，這是給想自己排程或debug用的）
 
@@ -145,9 +167,9 @@ python3 scripts/generate_analysis.py 2330.TW   # 只跑指定代號
 - 兩關檢查（股價在低位階／獲利沒衰退）是規則硬算（σ≤-1、獲利年增≥0），不是LLM判斷。
 - 趨勢線只存在當前分頁的記憶體裡，不會存檔，重新整理頁面會清空。
 - 移除股票不會刪掉`data/price_cache/`或`data/analysis/`的快取檔，想清就手動刪。
-- 兩個更新按鈕觸發的是背景thread，**如果重啟uvicorn，進行中的更新會被中斷**（之後再按一次就好，refresh_prices.py很快，generate_analysis.py可能要重跑比較久）。
+- 兩個更新按鈕觸發的是背景執行緒，**如果重啟 uvicorn，進行中的更新會被中斷**（再按一次就好；`refresh_prices.py` 很快，`generate_analysis.py` 重跑會比較久）。
 - 這個網頁沒有任何帳密驗證，也沒有多使用者支援，設計上就是給一個人自己用的工具，不要公開部署在沒有存取控制的網路上。
-- 「匯入備份」是整個覆蓋，不是合併——匯入前目前的觀察清單/關注/持倉/分析會被取代，不是跟備份檔內容合併。
+- 「匯入備份」是整個覆蓋，不是合併：目前的觀察清單、關注、持倉與分析會被備份檔的內容取代（覆蓋前會自動留一份 `pre-import` 備份）。
 
 ## 這個系統是什麼、不是什麼
 
@@ -163,20 +185,25 @@ python3 scripts/generate_analysis.py 2330.TW   # 只跑指定代號
 
 `rules.md` 只能影響模型的措辭與重點；**評分護欄的判斷邏輯寫在程式裡，profile 只能調門檻，不能關掉或繞過**。
 
-## 策略筆記檢查（原型，CLI）
+## 策略筆記檢查（CLI）
 
 把你自己的交易策略／筆記（`.md`、`.txt`，單檔 ≤100KB、總量 ≤300KB、≤20 檔）放進 `data/strategy/`（不會進 git），然後：
 
 ```bash
-python scripts/strategy_check.py <代號>            # 呼叫你登入的 claude CLI
+python scripts/strategy_check.py <代號>            # 依所設定的 AI 引擎執行；可加 --engine claude|codex 指定
 python scripts/strategy_check.py <代號> --dry-run  # 只看會送出什麼 prompt、選到哪些段落
 ```
 
-輸出是一張規則對照表。**程式只驗證兩件事**：①引文真的逐字存在於你的筆記、且在所有筆記中唯一；②引用的事實代碼（如 `TECH.stage2`）真的存在，證據文字由程式依代碼重新產生。`pass`／`fail` 是模型的判斷，**不代表程式證明規則成立**。筆記會被當成「可能含指令的使用者資料」，但這只能降低 prompt injection 風險，無法消除。
+輸出是一張規則對照表。**程式只驗證兩件事**：①引文真的逐字存在於你的筆記、且在所有筆記中唯一；②引用的事實代碼（如 `TECH.stage2`）真的存在，證據文字由程式依代碼重新產生。`pass`／`fail` 是模型的判斷，**不代表程式證明規則成立**。筆記會被當成「可能含指令的使用者資料」，但這只能降低提示詞注入（prompt injection）的風險，無法消除。
 
 ### 在網頁上使用
 
-首頁右上「策略筆記」可上傳／貼上／刪除筆記（只存在本機 `data/strategy/`）；個股詳細頁的「策略檢查」按鈕會用你登入的 claude／codex CLI 產生規則對照表，結果顯示在頁面並存於 `data/strategy_checks/`。若該股票你有持倉紀錄，持倉事實也會納入；沒持倉則給「如果已持有／如果沒持有」兩種情境建議（模型建議，未經程式驗證）。主分析另有「你的持倉與情境」說明，只影響文字、不影響分數；要關閉請在 profile 設 `"include_position": 0`。
+首頁右上「策略筆記」可上傳、貼上、刪除筆記（只存在本機 `data/strategy/`）；個股詳細頁的「策略檢查」按鈕會用你設定的 AI 引擎產生規則對照表，結果顯示在頁面並存於 `data/strategy_checks/`。
+
+- **兩個範圍**：「現在」只用目前的事實判斷；「買入當時」只用每筆買入日之前的 K 線算出的事實判斷（當時的財報、新聞與大盤無法重建，會標為不可得）。若該股票有持倉紀錄，每筆買入都會各自檢查；沒有持倉則給「如果已持有／如果沒持有」兩種情境建議（模型建議，未經程式驗證）。
+- **固定檢查項目（釘選規則）**：用白話寫下規則，編譯一次並經你確認後，之後由程式直接計算，不呼叫 AI，也不花額度。
+- **批次總覽**（首頁策略筆記旁的連結，`overview.html`）：一次選最多 10 檔股票跑策略檢查，結果以「規則 × 股票」的矩陣呈現。矩陣只比較「現在」的結果。
+- 主分析另有「你的持倉與情境」說明，只影響文字、不影響分數；要關閉請在 profile 設 `"include_position": 0`。
 
 ## 備份提醒
 
@@ -196,3 +223,9 @@ python scripts/strategy_check.py <代號> --dry-run  # 只看會送出什麼 pro
 | 策略檢查（7 條規則） | 約 10k 輸入＋約 2.4k 輸出 token，約 0.13 USD，約 21 秒 | 約 0.77 USD，約 2.2 分鐘 |
 
 費用是「API 等值」，訂閱方案不一定實際計費，但會消耗額度。系統呼叫 claude 時已關閉全域設定／外掛／MCP 與所有工具，每次呼叫的基本輸入從約 66k 降到約 2.7k token（約 16 倍）。codex 引擎只回報總 token 數，沒有費用。
+
+## 疑難排解
+
+- **按「更新基本面分析」、策略檢查或聊天時出現 503**：代表沒有可用的 AI 引擎。請照訊息設定其中一種，做法見 [ENGINES.md](ENGINES.md)。
+- **確認引擎有沒有設定好**：伺服器啟動後執行 `curl http://127.0.0.1:8013/api/info`，回應裡的 `engine` 會顯示目前選到的引擎名稱與是否可用，這個動作不會對外連線。
+- **網頁打不開或沒有資料**：確認伺服器還在執行、網址與埠號（預設 8013）正確；若是想從頭來過，請看上方「如何重置」。

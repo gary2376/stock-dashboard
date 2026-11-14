@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import threading
 from datetime import datetime, timezone
@@ -13,6 +14,7 @@ from datetime import datetime, timezone
 from config import DATA_DIR
 
 _lock = threading.Lock()
+MAX_LOG_BYTES = 5 * 1024 * 1024  # rotate to llm_usage.jsonl.1 beyond this (one older generation is kept)
 
 
 def log_file():
@@ -58,6 +60,11 @@ def record(engine: str, tag: str, seconds: float, usage: dict, ok: bool = True) 
     try:
         with _lock:
             log_file().parent.mkdir(parents=True, exist_ok=True)
+            try:
+                if log_file().stat().st_size > MAX_LOG_BYTES:
+                    os.replace(log_file(), log_file().with_name(log_file().name + ".1"))
+            except OSError:
+                pass  # no file yet, or rotation failed: just keep appending
             with open(log_file(), "a", encoding="utf-8") as f:
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
     except OSError:

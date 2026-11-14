@@ -2,9 +2,11 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8" />
+<link rel="icon" href="data:," />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>選股系統</title>
 <link rel="stylesheet" href="style.css" />
+<script src="util.js"></script>
 <script src="disclaimer.js"></script>
 <script src="demo.js"></script>
 <script src="tour.js"></script>
@@ -86,7 +88,7 @@
     <h2 id="firstRunEmptyTitle">還沒有任何股票</h2>
     <ol>
       <li>在上方輸入代號按「新增」（美股如 TSLA、台股如 2330）</li>
-      <li>新增後系統會自動抓價格；AI 分析需要你登入 <code>claude</code> / <code>codex</code> CLI，或用環境變數設定 Grok、Gemini、Ollama 等其他 AI（見 <code>docs/ENGINES.md</code>）</li>
+      <li>新增後系統會自動抓價格；AI 分析需要你登入 <code>claude</code> / <code>codex</code> CLI，或用環境變數設定 Grok、Gemini、Ollama 等其他 AI（見 <a href="https://github.com/gary2376/stock-dashboard/blob/master/docs/ENGINES.md" target="_blank" rel="noopener noreferrer">設定說明</a>）</li>
       <li>想先看看畫面？用示範模式：<code>./scripts/run_demo.sh</code> 或 <code>docker compose up</code></li>
     </ol>
     <button type="button" class="action-btn first-run-focus-btn">把游標移到上方輸入框</button>
