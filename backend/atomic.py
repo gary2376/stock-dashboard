@@ -50,6 +50,22 @@ def write_text_exclusive(path: Path, text: str) -> None:
 
 
 @contextmanager
+def blocking_lock(lock_path: Path):
+    """Waits for an exclusive inter-process lock on lock_path (no-op where fcntl is missing)."""
+    if fcntl is None:
+        yield
+        return
+    lock_path = Path(lock_path)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_path, "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
+@contextmanager
 def try_lock(lock_path: Path):
     """Yields True if this process got the exclusive lock, False if another holds it."""
     if fcntl is None:

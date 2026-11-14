@@ -6,6 +6,9 @@ Engines:
                   endpoint, OpenRouter, Ollama, LM Studio, ...)
   command         any CLI: LLM_COMMAND is run with the prompt on STDIN, the answer is read from STDOUT. It runs
                   with the user's own permissions: it is their own configuration, so treat it like a shell alias.
+                  It runs in its own session and on timeout/overflow its whole process group is killed; descendants
+                  that escape the group (e.g. by calling setsid themselves) are NOT terminated, and the call still
+                  returns within a bounded time.
 
 Settings come from env vars (win) or data/llm.json {"engine","base_url","model","command"}. The API key is read
 ONLY from LLM_API_KEY: a key found in the file is ignored (with a one-time warning) and never logged or echoed."""
@@ -17,8 +20,10 @@ import os
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import tempfile
+import threading
 import time
 from urllib.parse import urlparse
 
@@ -180,8 +185,11 @@ def _run_api(prompt: str, tag: str) -> str:
     if (urlparse(base).hostname or "").lower() in _LOCAL_HOSTS:
         session.trust_env = False  # never send local-model traffic through a proxy
     try:
-        resp = session.post(base + "/chat/completions", json=payload, headers=headers, timeout=TIMEOUT, stream=True)
+        resp = session.post(base + "/chat/completions", json=payload, headers=headers, timeout=TIMEOUT, stream=True,
+                            allow_redirects=False)
         try:
+            if 300 <= resp.status_code < 400:
+                fail("API 回應了重新導向，已拒絕（為避免資料被轉送到其他主機）")
             body = b""
             for chunk in resp.iter_content(65536):
                 body += chunk
@@ -210,6 +218,23 @@ def _run_api(prompt: str, tag: str) -> str:
     return msg
 
 
+def _kill_group(proc) -> None:
+    """SIGKILL the command's whole process group (it was started in its own session); never raises.
+    Falls back to killing just the child when the group kill is not possible."""
+    try:
+        if hasattr(os, "killpg") and os.name == "posix":
+            os.killpg(proc.pid, signal.SIGKILL)
+            return
+    except ProcessLookupError:
+        return  # already gone
+    except OSError:
+        pass
+    try:
+        proc.kill()
+    except OSError:
+        pass
+
+
 def _run_command(prompt: str, tag: str) -> str:
     cmd = load_config().get("command", "")
     try:
@@ -225,16 +250,107 @@ def _run_command(prompt: str, tag: str) -> str:
         raise RuntimeError(redact(msg))
     with tempfile.TemporaryDirectory() as cwd:  # empty cwd; the command still runs with the user's own permissions
         try:
-            r = subprocess.run(argv, input=prompt, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT)
-        except subprocess.TimeoutExpired:
-            fail(f"指令逾時（{TIMEOUT} 秒）")
+            proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd,
+                                    **({"start_new_session": True} if os.name == "posix" else {}))
         except OSError as e:
             fail(f"指令無法執行：{type(e).__name__}")
-    if r.returncode != 0:
-        fail(f"指令失敗（exit {r.returncode}）：{(r.stderr or r.stdout)[-500:]}")
-    if len(r.stdout) > MAX_BODY:
-        fail("指令輸出超過 2 MB 上限")
-    if not r.stdout.strip():
+        out, err = bytearray(), []
+        too_big = threading.Event()
+        timed_out = False
+
+        def feed():
+            try:
+                proc.stdin.write(prompt.encode("utf-8"))
+            except (OSError, ValueError):
+                pass  # the command exited before reading everything
+            finally:
+                try:
+                    proc.stdin.close()
+                except (OSError, ValueError):
+                    pass
+
+        def read_stdout():
+            try:
+                while True:
+                    chunk = proc.stdout.read1(65536)  # read1: returns what is available, never waits to fill the buffer
+                    if not chunk:
+                        return
+                    out.extend(chunk)
+                    if len(out) > MAX_BODY:  # bounded: never buffer an unbounded answer
+                        too_big.set()
+                        return
+            except (OSError, ValueError):
+                return  # pipe closed under us during cleanup
+
+        def drain_stderr():
+            buf = bytearray()
+            try:
+                while True:
+                    chunk = proc.stderr.read1(65536)
+                    if not chunk:
+                        break
+                    if len(buf) < 65536:  # keep the first 64 KB for the error message, drain (discard) the rest
+                        buf.extend(chunk[:65536 - len(buf)])
+            except (OSError, ValueError):
+                pass
+            err.append(bytes(buf))
+        live = []  # threads that really started: only those are joined
+        reader = err_reader = None
+        deadline = time.monotonic() + TIMEOUT
+        try:  # cleanup is armed right after Popen: whatever fails below, the group is killed and the child reaped
+            for fn in (feed, read_stdout, drain_stderr):
+                w = threading.Thread(target=fn, daemon=True)
+                w.start()
+                live.append(w)
+                if fn is read_stdout:
+                    reader = w
+                elif fn is drain_stderr:
+                    err_reader = w
+            while True:
+                if too_big.is_set():
+                    break
+                if proc.poll() is not None:  # the command itself is done: give the pipe a moment to drain
+                    reader.join(1.0)
+                    break
+                if time.monotonic() >= deadline:
+                    timed_out = True
+                    break
+                time.sleep(0.02)
+        finally:
+            _kill_group(proc)  # also removes stragglers that stayed in the group (e.g. a background child holding our pipes)
+            try:
+                proc.stdin.close()
+            except (OSError, ValueError):
+                pass
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                _kill_group(proc)  # second SIGKILL, then stop waiting
+                try:
+                    proc.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    pass
+            for w in live:
+                w.join(0.5)
+            # stdout/stderr are only closed when their reader is done: closing a buffered pipe under a blocked
+            # reader can hang or crash it. A reader still alive here (a descendant escaped the group and keeps the
+            # pipe open) is simply abandoned: it is a daemon thread and ends when that descendant does. A pipe whose
+            # reader never started is closed directly.
+            for pipe, w in ((proc.stdout, reader), (proc.stderr, err_reader)):
+                if w is None or not w.is_alive():
+                    try:
+                        pipe.close()
+                    except (OSError, ValueError):
+                        pass
+    if timed_out:
+        fail(f"指令逾時（{TIMEOUT} 秒）")
+    if too_big.is_set():
+        fail("指令輸出超過 2 MB 上限，已中止")
+    stderr_text = (err[0] if err else b"").decode("utf-8", "replace")
+    stdout_text = bytes(out).decode("utf-8", "replace")
+    if proc.returncode != 0:
+        fail(f"指令失敗（exit {proc.returncode}）：{(stderr_text or stdout_text)[-500:]}")
+    if not stdout_text.strip():
         fail("指令沒有輸出任何內容")
     llm_usage.record("command", tag, time.monotonic() - started, {}, ok=True)
-    return r.stdout
+    return stdout_text

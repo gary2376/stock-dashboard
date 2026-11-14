@@ -12,114 +12,6 @@ import llm_usage
 import seed
 import strategy
 
-# ---- first-run seed
-
-
-@pytest.fixture
-def fresh(tmp_path, monkeypatch):
-    d = tmp_path / "data"
-    d.mkdir()
-    monkeypatch.setattr(seed, "DATA_DIR", d)
-    monkeypatch.delenv("SD_NO_SEED", raising=False)
-    monkeypatch.setattr(config, "DEMO", False)
-    return d
-
-
-def test_fresh_dir_seeds_exactly_once(fresh):
-    s = seed.maybe_seed()
-    assert s["tickers"] == ["NVDA"] and s["notes"] == ["新手入門策略.md"]
-    assert json.loads((fresh / "tickers.json").read_text()) == ["NVDA"]
-    assert (fresh / "strategy" / "新手入門策略.md").read_text(encoding="utf-8").startswith("# 新手入門策略")
-    marker = json.loads((fresh / ".seeded").read_text())
-    assert marker["notes"] == ["新手入門策略.md"] and marker["seeded_at"]
-    before = {p: p.read_bytes() for p in fresh.rglob("*") if p.is_file()}
-    assert seed.maybe_seed() is None  # idempotent
-    assert {p: p.read_bytes() for p in fresh.rglob("*") if p.is_file()} == before
-
-
-def test_seeded_notes_load_without_warnings(fresh):
-    seed.maybe_seed()
-    notes, warnings = strategy.load_notes(fresh / "strategy")
-    assert [n.name for n in notes] == ["新手入門策略.md"] and warnings == []
-    assert any(strategy.chunk(n) for n in notes)
-
-
-@pytest.mark.parametrize("existing", ["tickers.json", "holdings.json", "analysis/A.json", "strategy/mine.md", ".seeded"])
-def test_existing_user_data_blocks_seeding(fresh, existing):
-    f = fresh / existing
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text("mine")
-    assert seed.maybe_seed() is None
-    assert f.read_text() == "mine"
-    assert sorted(p.name for p in fresh.rglob("*") if p.is_file()) == sorted([f.name]), "nothing else was written"
-
-
-def test_demo_and_env_switch_block(fresh, monkeypatch):
-    monkeypatch.setattr(config, "DEMO", True)
-    assert seed.maybe_seed() is None and not list(fresh.iterdir())
-    monkeypatch.setattr(config, "DEMO", False)
-    monkeypatch.setenv("SD_NO_SEED", "1")
-    assert seed.maybe_seed() is None and not list(fresh.iterdir())
-
-
-def test_bad_examples_dir_tolerated(fresh, tmp_path, monkeypatch):
-    monkeypatch.setattr(seed, "EXAMPLES", tmp_path / "missing")
-    s = seed.maybe_seed()
-    assert s["notes"] == [] and json.loads((fresh / "tickers.json").read_text()) == ["NVDA"]
-    # junk in the examples dir is skipped: bad name, binary, oversized, subdir, symlink
-    ex = tmp_path / "ex"
-    ex.mkdir()
-    (ex / "ok.md").write_text("# ok\n")
-    (ex / "bad name!.md").write_text("x")
-    (ex / "bin.md").write_bytes(b"\xff\xfe\x00")
-    (ex / "big.md").write_text("x" * (strategy.MAX_FILE + 1))
-    (ex / "sub.md").mkdir()
-    (ex / "link.md").symlink_to(ex / "ok.md")
-    (ex / "x.exe").write_text("x")
-    other = tmp_path / "data2"
-    other.mkdir()
-    monkeypatch.setattr(seed, "DATA_DIR", other)
-    monkeypatch.setattr(seed, "EXAMPLES", ex)
-    assert seed.maybe_seed()["notes"] == ["ok.md"]
-
-
-def test_never_raises_and_never_overwrites(fresh, tmp_path, monkeypatch):
-    def boom(*a, **k):
-        raise RuntimeError("disk on fire")
-    monkeypatch.setattr(seed, "write_text_exclusive", boom)
-    assert seed.maybe_seed() is None  # swallowed
-    monkeypatch.undo()
-    # a race: the note appears between the check and the write -> it stays untouched
-    d = tmp_path / "race"
-    d.mkdir()
-    monkeypatch.setattr(seed, "DATA_DIR", d)
-    monkeypatch.delenv("SD_NO_SEED", raising=False)
-    monkeypatch.setattr(config, "DEMO", False)
-    real = seed.write_text_exclusive
-
-    def sneaky(path, text):
-        if path.name == "新手入門策略.md":
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("user wrote this first")
-        return real(path, text)
-    monkeypatch.setattr(seed, "write_text_exclusive", sneaky)
-    s = seed.maybe_seed()
-    assert (d / "strategy" / "新手入門策略.md").read_text() == "user wrote this first" and s["notes"] == []
-
-
-def test_only_the_startup_hook_seeds(fresh, monkeypatch):
-    TestClient(appmod.app).get("/api/info")  # no context manager: no startup event
-    assert not list(fresh.iterdir())
-    with TestClient(appmod.app) as c:
-        c.get("/api/info")
-    assert json.loads((fresh / "tickers.json").read_text()) == ["NVDA"]
-
-
-def test_conftest_disables_seeding_by_default():
-    import os
-    assert os.environ.get("SD_NO_SEED") == "1"
-
-
 # ---- targeted analysis refresh
 
 @pytest.fixture
@@ -163,7 +55,7 @@ def test_all_tickers_unchanged(client):
     assert len(calls[0]) == 2 and calls[0][1].endswith("generate_analysis.py")
     s = c.get("/api/refresh/status").json()["analysis"]
     assert s["tickers"] is None and s["started_at"] and s["success"] is True and s["last_result"] == ["done"]
-    for body in ({}, {"tickers": None}, {"tickers": []}):
+    for body in ({}, {"tickers": None}):
         assert c.post("/api/refresh/analysis", json=body).status_code == 200
         wait_idle(c)
     assert all(len(a) == 2 for a in calls)

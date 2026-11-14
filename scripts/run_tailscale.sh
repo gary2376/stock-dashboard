@@ -21,6 +21,12 @@ if [ -z "$IP" ]; then
   exit 1
 fi
 
+# Host-header allowlist (DNS-rebinding guard): the Tailscale IP we bind to plus, best effort, this machine's MagicDNS name
+HOSTS="$IP"
+DNS_NAME=$("$TAILSCALE" status --json 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))' 2>/dev/null || true)
+[ -n "$DNS_NAME" ] && HOSTS="$HOSTS,$DNS_NAME"
+export STOCK_DASHBOARD_ALLOWED_HOSTS="${STOCK_DASHBOARD_ALLOWED_HOSTS:+$STOCK_DASHBOARD_ALLOWED_HOSTS,}$HOSTS"
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "只監聽 Tailscale IP：$IP:8013"
 if [ -z "${STOCK_DASHBOARD_PROFILE:-}" ] && [ -d "$ROOT/data/profiles/personal" ]; then

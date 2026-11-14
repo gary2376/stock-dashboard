@@ -9,6 +9,7 @@ from pathlib import Path
 # directory BEFORE any test module imports them, so no test can ever write into the real data/ dir.
 _TEST_DATA = tempfile.mkdtemp(prefix="sd-test-data-")
 os.environ["STOCK_DASHBOARD_DATA"] = _TEST_DATA
+os.environ.setdefault("STOCK_DASHBOARD_ALLOWED_HOSTS", "testserver")  # TestClient sends Host: testserver
 os.environ.setdefault("SD_NO_SEED", "1")  # the first-run seed must never touch other tests
 atexit.register(shutil.rmtree, _TEST_DATA, ignore_errors=True)
 

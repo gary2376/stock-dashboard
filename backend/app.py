@@ -6,6 +6,7 @@ import json
 import logging
 import math
 import os
+import re
 import statistics
 import stat
 import subprocess
@@ -44,7 +45,7 @@ import seed
 import strategy
 import strategy_batch
 import strategy_runner
-from atomic import write_text_atomic
+from atomic import blocking_lock, write_text_atomic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import generate_analysis as ga  # noqa: E402 — reuses its pick_engine()/run_llm() for /api/chat
@@ -109,6 +110,38 @@ async def same_origin_writes(request: Request, call_next):
     return await call_next(request)
 
 
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+HOST_REJECTED = "不允許的 Host（防 DNS rebinding）。若要用其他主機名稱連線，請設定 STOCK_DASHBOARD_ALLOWED_HOSTS"
+_AUTHORITY = re.compile(r"(\[[0-9a-fA-F:.]+\]|[A-Za-z0-9.-]+)(:[0-9]{1,5})?")
+
+
+def _host_name(header: str) -> str:
+    """Hostname of a strictly formed Host header (lower-cased, port stripped, '[::1]:8013' -> '::1');
+    '' for anything malformed (junk after a bracket, a trailing dot, '#', '@', multiple colons...)."""
+    m = _AUTHORITY.fullmatch((header or "").strip())
+    if not m:
+        return ""
+    name = m.group(1).lower()
+    if name.startswith("["):
+        return name[1:-1]
+    return "" if name.endswith(".") else name
+
+
+def _allowed_hosts() -> set:
+    extra = {_host_name(x) for x in os.environ.get("STOCK_DASHBOARD_ALLOWED_HOSTS", "").split(",") if x.strip()}
+    return LOOPBACK_HOSTS | {h for h in extra if h}
+
+
+@app.middleware("http")
+async def only_known_hosts(request: Request, call_next):
+    """DNS-rebinding guard, registered LAST so it is the OUTERMOST middleware: the Origin==Host check passes for an
+    attacker's name that resolves to 127.0.0.1, so EVERY request (reads too) must carry exactly one acceptable Host."""
+    hosts = [v for k, v in request.scope.get("headers", []) if k == b"host"]
+    if len(hosts) != 1 or _host_name(hosts[0].decode("latin-1")) not in _allowed_hosts():
+        return JSONResponse({"detail": HOST_REJECTED}, status_code=400)
+    return await call_next(request)
+
+
 @app.get("/api/info")
 def info():
     return {"demo": config.DEMO, "version": "4.2", "engine": llm_engines.info()}
@@ -150,11 +183,17 @@ def _start_refresh(kind: str, script: str, timeout: int, args=()):
     with _refresh_lock:
         if _refresh_state[kind]["running"]:
             raise HTTPException(409, "已經在更新中，稍等一下")
+        prior = dict(_refresh_state[kind])
         _refresh_state[kind]["running"] = True
         if "tickers" in _refresh_state[kind]:
             _refresh_state[kind]["tickers"] = list(args) or None
             _refresh_state[kind]["started_at"] = datetime.now().isoformat(timespec="seconds")
-    threading.Thread(target=_run_refresh, args=(kind, script, timeout, tuple(args)), daemon=True).start()
+    try:
+        threading.Thread(target=_run_refresh, args=(kind, script, timeout, tuple(args)), daemon=True).start()
+    except BaseException:
+        with _refresh_lock:
+            _refresh_state[kind].update(prior)  # a thread that never started: put back the COMPLETE previous state
+        raise HTTPException(500, "無法啟動更新（執行緒建立失敗），請稍後再試")
 
 
 def _redact_paths(text) -> str:
@@ -167,27 +206,75 @@ def _redact_paths(text) -> str:
     return s
 
 
-_lists_lock = threading.Lock()  # tickers.json / favorites.json read-modify-write
+_data_lock = threading.RLock()  # ONE thread lock for tickers/favorites/holdings (no lock-order problems)
+_lists_lock = _holdings_lock = _data_lock  # historical names
+_tl = threading.local()  # re-entrancy depth of the inter-process file lock in this thread
 
 
-def _load_json_file(path: Path, kind: type):
-    """Parsed JSON of the expected top-level type, or an empty one. A corrupt file is moved aside to
-    '<name>.corrupt-<UTC stamp>' (never lost) and treated as empty instead of 500-ing every page."""
-    if not path.exists():
-        return kind()
-    try:
-        data = json.loads(path.read_text())
-        if isinstance(data, kind):
-            return data
-    except ValueError:
-        pass
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    try:
-        os.replace(path, path.with_name(f"{path.name}.corrupt-{stamp}"))
-        logger.warning("%s was not valid; moved aside to %s.corrupt-%s and treated as empty", path.name, path.name, stamp)
-    except OSError:
-        logger.warning("%s is not valid and could not be moved aside; treated as empty", path.name)
-    return kind()
+@contextlib.contextmanager
+def _file_guard():
+    """Inter-process lock (DATA_DIR/.locks/lists.lock) taken at the OUTERMOST level only."""
+    depth = getattr(_tl, "depth", 0)
+    if depth:
+        _tl.depth = depth + 1
+        try:
+            yield
+        finally:
+            _tl.depth -= 1
+        return
+    with blocking_lock(TICKERS_FILE.parent / ".locks" / "lists.lock"):
+        _tl.depth = 1
+        try:
+            yield
+        finally:
+            _tl.depth = 0
+
+
+@contextlib.contextmanager
+def _data_section():
+    """Every read/modify/write (and corrupt-file quarantine) of the three list files runs inside this."""
+    with _data_lock, _file_guard():
+        yield
+
+
+def _load_json_file(path: Path, kind: type, lock=None):
+    """Parsed JSON of the expected top-level type, or an empty one. Read, parse and quarantine all happen inside
+    the data section (thread lock + inter-process lock) that every writer also uses. A corrupt file is moved aside
+    to '<name>.corrupt-<UTC stamp>' (never lost) and treated as empty; if it cannot be moved aside we refuse (500)
+    rather than let a later write overwrite it. Before moving, the file's identity (inode, mtime, size) and bytes
+    must still be what we parsed."""
+    with _data_section():
+        for _ in range(3):
+            try:
+                before = os.stat(path)
+                raw = path.read_bytes()
+            except FileNotFoundError:
+                return kind()
+            except OSError:
+                raise HTTPException(500, "資料檔無法讀取，請手動檢查")
+            try:
+                data = json.loads(raw.decode("utf-8"))
+                if isinstance(data, kind):
+                    return data
+            except ValueError:  # includes UnicodeDecodeError
+                pass
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+            # residual (documented): a writer that does NOT take our lock (a hand edit while the server runs) can still
+            # slip in between this check and os.replace; cooperating writers (the app, the seeder) cannot.
+            try:
+                now = os.stat(path)
+                if (now.st_ino, now.st_mtime_ns, now.st_size) != (before.st_ino, before.st_mtime_ns, before.st_size) \
+                        or path.read_bytes() != raw:  # replaced meanwhile (another process): look again
+                    continue
+                os.replace(path, path.with_name(f"{path.name}.corrupt-{stamp}"))
+            except FileNotFoundError:
+                return kind()
+            except OSError:
+                logger.warning("%s is not valid and could not be moved aside", path.name)
+                raise HTTPException(500, "資料檔損壞且無法備份，請手動檢查")
+            logger.warning("%s was not valid; moved aside to %s.corrupt-%s and treated as empty", path.name, path.name, stamp)
+            return kind()
+    raise HTTPException(500, "資料檔損壞且無法備份，請手動檢查")
 
 
 def _tickers() -> list[str]:
@@ -195,7 +282,8 @@ def _tickers() -> list[str]:
 
 
 def _save_tickers(tickers: list[str]) -> None:
-    write_text_atomic(TICKERS_FILE, json.dumps(tickers, ensure_ascii=False, indent=2))
+    with _data_section():
+        write_text_atomic(TICKERS_FILE, json.dumps(tickers, ensure_ascii=False, indent=2))
 
 
 def _favorites() -> list[str]:
@@ -203,7 +291,8 @@ def _favorites() -> list[str]:
 
 
 def _save_favorites(favorites: list[str]) -> None:
-    write_text_atomic(FAVORITES_FILE, json.dumps(favorites, ensure_ascii=False, indent=2))
+    with _data_section():
+        write_text_atomic(FAVORITES_FILE, json.dumps(favorites, ensure_ascii=False, indent=2))
 
 
 def _new_lot_id() -> str:
@@ -221,26 +310,25 @@ def _normalize_lots(value) -> list:
     return []
 
 
-_holdings_lock = threading.Lock()
-
-
 def _holdings() -> dict:
     """{ticker: [lot, ...]}. Transparently upgrades the old one-lot-per-ticker file format (and
     list entries missing an id, from pre-migration data) and writes the upgraded shape straight
     back, so the migration only happens once and ids stay stable across reads."""
-    raw = _load_json_file(HOLDINGS_FILE, dict)
-    needs_rewrite = any(
-        not isinstance(v, list) or any(not isinstance(l, dict) or not l.get("id") for l in v)
-        for v in raw.values()
-    )
-    normalized = {t: _normalize_lots(v) for t, v in raw.items()}
-    if needs_rewrite:
-        _save_holdings(normalized)
-    return normalized
+    with _data_section():  # read, migrate and rewrite as one locked step
+        raw = _load_json_file(HOLDINGS_FILE, dict)
+        needs_rewrite = any(
+            not isinstance(v, list) or any(not isinstance(l, dict) or not l.get("id") for l in v)
+            for v in raw.values()
+        )
+        normalized = {t: _normalize_lots(v) for t, v in raw.items()}
+        if needs_rewrite:
+            _save_holdings(normalized)
+        return normalized
 
 
 def _save_holdings(holdings: dict) -> None:
-    write_text_atomic(HOLDINGS_FILE, json.dumps(holdings, ensure_ascii=False, indent=2))
+    with _data_section():
+        write_text_atomic(HOLDINGS_FILE, json.dumps(holdings, ensure_ascii=False, indent=2))
 
 
 def _holding_summary(lots: list, current_price) -> dict | None:
@@ -363,7 +451,7 @@ def add_ticker(body: TickerIn):
     ticker = dp.resolve_ticker(raw)  # network: deliberately outside the lock
     if ticker is None:
         raise HTTPException(404, f"查無 {raw} 的股價資料，確認代號是否正確（美股代號或台股代號皆可，如 2330）")
-    with _lists_lock:
+    with _data_section():
         tickers = _tickers()
         if ticker in tickers:
             raise HTTPException(409, f"{ticker} 已在觀察清單")
@@ -390,7 +478,7 @@ def _start_analysis_best_effort(ticker: str) -> None:
 @app.delete("/api/tickers/{ticker}")
 def remove_ticker(ticker: str):
     ticker = _require_valid_ticker(ticker)
-    with _lists_lock:
+    with _data_section():
         tickers = _tickers()
         if ticker not in tickers:
             raise HTTPException(404, f"{ticker} 不在觀察清單")
@@ -402,7 +490,7 @@ def remove_ticker(ticker: str):
 @app.post("/api/favorites/{ticker}")
 def add_favorite(ticker: str):
     ticker = _require_valid_ticker(ticker)
-    with _lists_lock:
+    with _data_section():
         favorites = _favorites()
         if ticker not in favorites:
             favorites.append(ticker)
@@ -413,7 +501,7 @@ def add_favorite(ticker: str):
 @app.delete("/api/favorites/{ticker}")
 def remove_favorite(ticker: str):
     ticker = _require_valid_ticker(ticker)
-    with _lists_lock:
+    with _data_section():
         favorites = _favorites()
         if ticker in favorites:
             favorites.remove(ticker)
@@ -439,7 +527,7 @@ def add_lot(ticker: str, body: HoldingIn):
         raise HTTPException(400, "均價要大於0")
     if body.shares is not None and (not math.isfinite(body.shares) or body.shares <= 0):
         raise HTTPException(400, "股數要大於0")
-    with _holdings_lock:
+    with _data_section():
         holdings = _holdings()
         lots = holdings.setdefault(ticker, [])
         lots.append({"id": _new_lot_id(), "date": body.date, "price": body.price, "shares": body.shares})
@@ -451,7 +539,7 @@ def add_lot(ticker: str, body: HoldingIn):
 def remove_lot(ticker: str, lot_id: str):
     """Removes one buy lot by id. Clearing the whole position is DELETE /api/holdings/{ticker}."""
     ticker = _require_valid_ticker(ticker)
-    with _holdings_lock:
+    with _data_section():
         holdings = _holdings()
         lots = holdings.get(ticker, [])
         remaining = [l for l in lots if l["id"] != lot_id]
@@ -469,7 +557,7 @@ def remove_lot(ticker: str, lot_id: str):
 def clear_holding(ticker: str):
     """Clears every lot for this ticker."""
     ticker = _require_valid_ticker(ticker)
-    with _holdings_lock:
+    with _data_section():
         holdings = _holdings()
         if ticker in holdings:
             del holdings[ticker]
@@ -908,7 +996,8 @@ def pins_eval(ticker: str):
 def _backup_payload(include_strategy: bool = False, extra_analysis_tickers=()) -> dict:
     """The user's own data (watchlist, favorites, holdings, codex/claude analysis) — not
     price_cache, that's trivially cheap to re-fetch and would just bloat the file."""
-    tickers = _tickers()
+    with _data_section():  # one consistent snapshot of the three list files: a concurrent import can't interleave
+        tickers, favorites, holdings = _tickers(), _favorites(), _holdings()
     analysis = {}
     for t in [*tickers, *(x for x in extra_analysis_tickers if x not in tickers)]:
         a = _analysis(t)
@@ -917,8 +1006,8 @@ def _backup_payload(include_strategy: bool = False, extra_analysis_tickers=()) -
     out = {
         "exported_at": datetime.now().isoformat(timespec="seconds"),
         "tickers": tickers,
-        "favorites": _favorites(),
-        "holdings": _holdings(),
+        "favorites": favorites,
+        "holdings": holdings,
         "analysis": analysis,
     }
     if include_strategy:
@@ -1052,7 +1141,7 @@ def import_backup(body: BackupIn):
             raise HTTPException(413, f"{t} 的分析資料超過上限（200KB）")
         analysis_files[ANALYSIS_DIR / f"{t}.json"] = text
 
-    with _holdings_lock, _strategy_lock:
+    with _data_section(), _strategy_lock:
         # strategy notes: MERGE (write/overwrite listed files, never delete others). Validated under the lock
         # so a concurrent PUT cannot push the total past the limits between check and commit.
         strategy_files: dict[Path, str] = {}
@@ -1104,6 +1193,8 @@ def refresh_analysis(body: Optional[RefreshAnalysisIn] = None):
         if not isinstance(body.tickers, list) or not all(isinstance(t, str) for t in body.tickers):
             raise HTTPException(400, "tickers 必須是代號字串的清單")
         chosen = list(dict.fromkeys(t.strip().upper() for t in body.tickers))
+        if not chosen:
+            raise HTTPException(400, "沒有選擇任何股票")
         if len(chosen) > MAX_REFRESH_TICKERS:
             raise HTTPException(400, f"一次最多更新 {MAX_REFRESH_TICKERS} 檔")
         bad = [t for t in chosen if not dp.is_valid_ticker(t)]
@@ -1144,7 +1235,8 @@ def refresh_status():
     """_refresh_state只存在記憶體裡——server重啟(含開發時的--reload)就會被重置成None，讓前端誤判成
     「尚未更新過」，即使data/price_cache或data/analysis底下其實有當天的新快取檔。記憶體沒有值時，
     用磁碟上實際的檔案時間戳回填，顯示的「上次更新」才反映真實狀態，不是process的壽命。"""
-    result = json.loads(json.dumps(_refresh_state))  # shallow-safe copy, don't mutate the live dict
+    with _refresh_lock:  # one consistent snapshot: running/success/last_result change together
+        result = json.loads(json.dumps(_refresh_state))
     if result["prices"]["last_run"] is None:
         result["prices"]["last_run"] = _latest_mtime(DATA_DIR / "price_cache")
     if result["analysis"]["last_run"] is None:

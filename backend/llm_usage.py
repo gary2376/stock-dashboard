@@ -11,6 +11,7 @@ import re
 import threading
 from datetime import datetime, timezone
 
+from atomic import blocking_lock
 from config import DATA_DIR
 
 _lock = threading.Lock()
@@ -58,7 +59,7 @@ def record(engine: str, tag: str, seconds: float, usage: dict, ok: bool = True) 
     row = {"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), "engine": engine,
            "tag": tag or "", "seconds": round(seconds, 1), "ok": ok, **usage}
     try:
-        with _lock:
+        with _lock, blocking_lock(log_file().parent / ".locks" / "llm_usage.lock"):  # append+rotate: one writer at a time
             log_file().parent.mkdir(parents=True, exist_ok=True)
             try:
                 if log_file().stat().st_size > MAX_LOG_BYTES:

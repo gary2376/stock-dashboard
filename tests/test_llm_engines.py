@@ -124,6 +124,8 @@ class Handler(BaseHTTPRequestHandler):
             status, out = 401, json.dumps({"error": {"message": f"bad key {self.headers.get('Authorization')}"}}).encode()
         elif mode == "500":
             status, out = 500, b"upstream exploded"
+        elif mode == "307":
+            status, out = 307, b""
         elif mode == "badjson":
             out = b"<html>not json</html>"
         elif mode == "shape":
@@ -134,6 +136,8 @@ class Handler(BaseHTTPRequestHandler):
             out = json.dumps({"choices": [{"message": {"content": [{"type": "text", "text": "ab"}, {"text": "cd"}]}}]}).encode()
         try:
             self.send_response(status)
+            if status == 307:
+                self.send_header("Location", "/elsewhere")
             self.send_header("Content-Length", str(len(out)))
             self.end_headers()
             self.wfile.write(out)
@@ -354,3 +358,30 @@ def test_pin_compile_parsing_with_fences_and_prose(monkeypatch, wrap):
     monkeypatch.setattr(pins.ga, "run_llm", lambda *a, **k: wrap.replace("{j}", json.dumps(
         {"status": "ok", "now": {"expression": "FOO.bar > 1"}})))
     assert pins.compile_pin({"text": "低檔才買 (llm)", "text_revision": 1})["state"] == "unsupported"
+
+
+def test_api_does_not_follow_redirects(server, clean, monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", KEY)
+    Handler.mode = "307"
+    with pytest.raises(RuntimeError, match="重新導向") as e:
+        ga.run_llm("p", "openai", tag="x")
+    assert "為避免資料被轉送到其他主機" in str(e.value) and KEY not in str(e.value)
+    assert len(Handler.seen) == 1  # the Location target was never requested
+    assert usage_rows(clean)[-1]["ok"] is False
+
+
+def test_command_output_is_bounded_and_process_killed(clean, monkeypatch):
+    code = "import sys,time; sys.stdout.write('x'*3000000); sys.stdout.flush(); time.sleep(60)"
+    monkeypatch.setenv("LLM_COMMAND", f'{sys.executable} -c "{code}"')
+    t0 = time.monotonic()
+    with pytest.raises(RuntimeError, match="2 MB"):
+        ga.run_llm("p", "command")
+    assert time.monotonic() - t0 < 20  # killed right away, not after the sleep or the 180 s timeout
+    assert usage_rows(clean)[-1]["ok"] is False
+
+
+def test_command_chatty_stderr_and_big_prompt_do_not_deadlock(clean, monkeypatch):
+    code = ("import sys; p = sys.stdin.read(); sys.stderr.write('e' * 3000000); "
+            "sys.stdout.write('len=%d' % len(p))")
+    monkeypatch.setenv("LLM_COMMAND", f'{sys.executable} -c "{code}"')
+    assert ga.run_llm("y" * 1_000_000, "command") == "len=1000000"
