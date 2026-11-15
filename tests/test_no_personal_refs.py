@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-# generic leaks only: absolute home-directory paths, e-mail addresses, Tailscale (CGNAT 100.64/10) addresses
+# generic leaks only: absolute home-directory paths, e-mail addresses, private-network (CGNAT 100.64/10) addresses
 PATTERN = re.compile(r"/Users/[A-Za-z0-9._-]+|/home/(?!user\b)[A-Za-z0-9._-]+|[\w.+-]+@(?:gmail|outlook|yahoo|hotmail)\.com"
                      r"|\b100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}\b|\.ts\.net\b")
 
