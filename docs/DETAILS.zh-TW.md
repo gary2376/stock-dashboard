@@ -66,7 +66,6 @@
 - Python 3.9+
 - `pip install -r backend/requirements.txt`
 - （選用）一種 AI 引擎，才能用「更新基本面分析」、策略檢查、固定檢查項目的編譯與聊天：已登入的 [Codex CLI](https://github.com/openai/codex) 或 [Claude Code](https://github.com/anthropics/claude-code)，或是 OpenAI 相容的 API、自訂命令列。設定方式見 [ENGINES.md](ENGINES.md)
-- （選用）[Tailscale](https://tailscale.com/)，只有想用 `scripts/run_tailscale.sh` 做遠端存取時才需要
 
 ## 基本面分析引擎
 
@@ -117,18 +116,8 @@ cd .. && ./scripts/run_local.sh
 http://127.0.0.1:8013/
 ```
 
-> ⚠️ **這個服務沒有任何登入驗證**，而且會回傳你的持倉與分析。請不要用 `--host 0.0.0.0` 或把埠號對外開放；要從其他裝置連，請用下面的 Tailscale 方式。
+> ⚠️ **這個服務沒有任何登入驗證**，而且會回傳你的持倉與分析。請不要用 `--host 0.0.0.0` 或把埠號對外開放；本專案不提供遠端存取。
 > 另外：聊天與分析會把你的持倉與分析內容，送給你所設定的 AI 引擎（CLI 或 API 背後的服務）。使用 `claude` CLI 時已停用所有工具，但這只是降低能力，**不是安全邊界**；`codex` 的唯讀沙盒仍可讀取整個檔案系統。詳見 [SECURITY.md](../SECURITY.md)。
-
-### 只想從區網/VPN其他裝置連，不想本機WiFi也能連
-
-專案附了`scripts/run_tailscale.sh`，會自動查你自己機器當下的Tailscale IP，只bind那張網卡啟動（不是`0.0.0.0`），所以只有同一個tailnet上的裝置連得到，本機WiFi/乙太網路連不到：
-
-```bash
-./scripts/run_tailscale.sh
-```
-
-跑起來後終端機會印出你機器當下的Tailscale IP，用那個IP（或你自己tailnet的MagicDNS網址）從其他裝置連，例如`http://<你的tailscale IP>:8013/`。這個網頁本身**沒有帳密驗證**，只bind Tailscale網卡是唯一的存取限制，請自行評估是否足夠。
 
 ### 功能說明
 

@@ -55,11 +55,6 @@ def test_host_name_parser():
     assert appmod._host_name("") == "" and appmod._host_name("[::1") == ""
 
 
-def test_tailscale_script_exports_allowlist():
-    text = (appmod.ROOT / "scripts" / "run_tailscale.sh").read_text()
-    assert "STOCK_DASHBOARD_ALLOWED_HOSTS" in text and "$IP" in text
-
-
 # ---- 2: quarantine
 
 @pytest.fixture

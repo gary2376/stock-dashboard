@@ -30,7 +30,7 @@ SD_E2E=1 python -m pytest tests/e2e -q
 
 ## 幾條規則
 
-- **不要放個人資訊**：`tests/test_no_personal_refs.py` 會掃描追蹤中的原始碼與文件，找出個人家目錄路徑、個人 e-mail 與私人網路位址（Tailscale）。請不要把這類內容寫進程式或文件。
+- **不要放個人資訊**：`tests/test_no_personal_refs.py` 會掃描追蹤中的原始碼與文件，找出個人家目錄路徑、個人 e-mail 與私人網路位址。請不要把這類內容寫進程式或文件。
 - **評分護欄的測試資料集**：`tests/golden/guards.json` 凍結了目前護欄（`backend/score_guards.py`）的行為。只有在你刻意調整護欄門檻時，才用 `python tests/make_golden.py`（在 repo 根目錄執行）重新產生，並在 PR 或 commit 說明為什麼要改。
 - **Python 3.9 相容**：CI 會用 Python 3.9、3.11、3.12 各跑一次，所以請避免 3.10 以上才有的語法，例如 `match` 陳述式、執行階段的 `X | Y` 型別寫法（請用 `Optional[X]`，或在檔案開頭加 `from __future__ import annotations` 並只用在型別註記），以及 f-string 裡再使用相同種類的引號（3.12 才允許）。
 - **個人資料不進版控**：`data/` 底下的內容都被 `.gitignore` 排除，請不要用 `git add -f` 強制加入。
