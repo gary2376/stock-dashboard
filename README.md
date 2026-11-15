@@ -116,6 +116,21 @@ python3 -m venv .venv && .venv/bin/pip install -r backend/requirements.txt   # �
 - 第一次啟動會自動放入一檔 **NVDA** 和一份範例策略筆記（想從空白開始：`SD_NO_SEED=1 ./scripts/run_local.sh`）。要新增股票：在首頁輸入代號按「新增」（美股如 `TSLA`，台股如 `2330`，會自動嘗試 `.TW`／`.TWO`）；把你的筆記（`.md`／`.txt`）放進網頁「策略筆記」；在個股頁輸入持倉；按「更新基本面分析」。想先看畫面，先跑示範模式。
 - 想從手機連：用 `scripts/run_tailscale.sh`（只綁 Tailscale 網卡）。**不要**用 `--host 0.0.0.0`，這個服務沒有登入驗證。
 
+## 想改成自己的版本？請 AI 幫你
+
+這個專案刻意做成「clone 回去就能改」：
+
+1. `git clone https://github.com/gary2376/stock-dashboard`，照上面的方式跑起來。
+2. 用你慣用的 AI 程式助手（Claude Code、Codex、Cursor…）打開這個資料夾。它會先讀 [AGENTS.md](AGENTS.md)，知道專案結構、哪些設計不能動、改完要跑哪些測試。
+3. 直接用中文說你想要什麼，例如：
+   - 「幫我新增一條規則：連續三天收盤跌破 20 日均線就標示未通過。」
+   - 「新增一個台股專用的資料來源，並加上測試。」
+   - 「把介面改成英文。」
+   - 「我覺得批次總覽太擠，請改成可以只看未通過的規則。」
+4. 改完要求它跑 `python -m pytest -q tests`（約 670 個離線測試）；全過再自己用一下。
+
+系統哪裡不夠好，就讓 AI 幫你補；你的規則、你的筆記、你的 AI，都留在你自己的電腦上。
+
 ## 資料與隱私
 
 - 你的觀察清單、持倉、筆記、分析、聊天紀錄都在 `data/`（已加入 `.gitignore`），不會被 commit。
