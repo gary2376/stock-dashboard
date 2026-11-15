@@ -16,3 +16,4 @@ jobs
 webhooks
 .env.*
 **/.env.*
+local
