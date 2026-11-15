@@ -11,3 +11,8 @@ node_modules
 **/.DS_Store
 **/.env
 *.env
+cache
+jobs
+webhooks
+.env.*
+**/.env.*

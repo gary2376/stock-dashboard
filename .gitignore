@@ -27,3 +27,18 @@ data/strategy_checks/
 data/llm_usage.jsonl
 data/pins.json
 data_demo/
+
+# safety net: ignore everything in data/ except the tracked placeholder, so a new
+# kind of personal file can never be committed by accident
+data/*
+!data/backups/
+data/backups/*
+!data/backups/README.md
+
+# local-only folders and secrets
+cache/
+jobs/
+webhooks/
+.env
+.env.*
+!.env.example
